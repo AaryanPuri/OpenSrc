@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2022", "DOM"],
+    "types": ["node"],
+    "strict": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    // The repo root, so the shared parser (../shared) compiles alongside the server:
+    // dist/backend/src/*.js and dist/shared/*.js.
+    "rootDir": "..",
+    "outDir": "dist",
+    "sourceMap": true
+  },
+  "include": ["src/**/*.ts", "src/**/*.json", "../shared/**/*.ts"],
+  "exclude": ["../shared/**/*.test.ts"]
+}

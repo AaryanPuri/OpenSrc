@@ -1,0 +1,304 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * OpenSrc: open source as a quilt.
+ * Light = warm paper and ink. Dark = a deep indigo "night quilt" with cream
+ * thread. Tokens are RGB triplets so Tailwind can apply alpha.
+ */
+:root,
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: 27 25 48;
+  --surface: 38 35 66;
+  --surface-2: 46 42 76;
+  --surface-3: 57 52 90;
+  --line: 86 80 128;
+  --line-strong: 120 112 164;
+  --fg: 247 240 225;
+  --muted: 208 199 182;
+  --subtle: 172 163 158;
+  --accent: 255 150 108;
+  --accent-fg: 38 20 14;
+  --indigo: 170 178 255;
+  --warn: 244 196 98;
+  --info: 150 198 244;
+  --ok: 150 214 160;
+  --danger: 252 140 128;
+  --shadow: 6 4 18;
+  --grain-opacity: 0.07;
+  --grain-blend: soft-light;
+  --seam: 128 120 176;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) {
+    color-scheme: light;
+    --bg: 245 238 225;
+    --surface: 252 248 240;
+    --surface-2: 237 228 211;
+    --surface-3: 227 216 195;
+    --line: 205 190 164;
+    --line-strong: 160 142 114;
+    --fg: 36 29 22;
+    --muted: 78 66 52;
+    --subtle: 98 86 72;
+    --accent: 176 56 32;
+    --accent-fg: 253 249 241;
+    --indigo: 52 64 140;
+    --warn: 142 84 6;
+    --info: 34 94 146;
+    --ok: 30 104 60;
+    --danger: 166 36 36;
+    --shadow: 70 48 20;
+    --grain-opacity: 0.16;
+    --grain-blend: multiply;
+    --seam: 176 158 128;
+  }
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+  --bg: 245 238 225;
+  --surface: 252 248 240;
+  --surface-2: 237 228 211;
+  --surface-3: 227 216 195;
+  --line: 205 190 164;
+  --line-strong: 160 142 114;
+  --fg: 36 29 22;
+  --muted: 78 66 52;
+  --subtle: 98 86 72;
+  --accent: 176 56 32;
+  --accent-fg: 253 249 241;
+  --indigo: 52 64 140;
+  --warn: 142 84 6;
+  --info: 34 94 146;
+  --ok: 30 104 60;
+  --danger: 166 36 36;
+  --shadow: 70 48 20;
+  --grain-opacity: 0.16;
+  --grain-blend: multiply;
+  --seam: 176 158 128;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    scroll-padding-top: 5rem;
+    background: rgb(var(--bg));
+  }
+  body {
+    @apply bg-bg font-sans text-fg;
+    overflow-x: hidden;
+    min-height: 100dvh;
+  }
+  /* Paper / cloth grain over everything, never intercepting input. */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    pointer-events: none;
+    opacity: var(--grain-opacity);
+    mix-blend-mode: var(--grain-blend);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .45 0 0 0 0 .38 0 0 0 0 .3 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  ::selection {
+    background: rgb(var(--accent) / 0.25);
+  }
+  :focus-visible {
+    outline: 2px solid rgb(var(--accent));
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+  kbd {
+    @apply inline-flex h-5 min-w-5 items-center justify-center rounded border border-line-strong bg-surface px-1 font-mono text-2xs text-muted;
+    box-shadow: inset 0 -1px 0 rgb(var(--line-strong));
+  }
+  h1,
+  h2,
+  .font-display {
+    font-optical-sizing: auto;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex select-none items-center justify-center gap-2 rounded-[10px] text-sm font-medium transition-[background-color,border-color,color,box-shadow,transform] duration-150 ease-out active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50;
+  }
+  .btn-ink {
+    @apply btn bg-fg text-bg hover:bg-fg/90;
+  }
+  .btn-thread {
+    @apply btn bg-accent text-accent-fg hover:brightness-110;
+  }
+  .btn-ghost {
+    @apply btn h-11 px-3 text-muted hover:bg-fg/[0.06] hover:text-fg sm:h-9;
+  }
+  .btn-seam {
+    @apply btn h-11 border border-line-strong px-4 text-fg hover:border-fg/60 hover:bg-fg/[0.04] sm:h-10;
+  }
+  .icon-btn {
+    @apply btn h-11 w-11 text-muted hover:bg-fg/[0.06] hover:text-fg sm:h-9 sm:w-9;
+  }
+
+  /* Solid hairlines for ordinary structure… */
+  .seam-b {
+    border-bottom: 1px solid rgb(var(--line));
+  }
+  .seam-t {
+    border-top: 1px solid rgb(var(--line));
+  }
+  .seam {
+    border: 1px solid rgb(var(--line));
+  }
+  /* …and the dashed "stitch" reserved for signature spots (composer, your-patch tile). */
+  .stitch {
+    border: 1.5px dashed rgb(var(--seam) / 0.9);
+  }
+
+  /* Paper card: the only elevated surface (results), with a solid hairline edge. */
+  .paper {
+    @apply relative rounded-[14px] bg-surface shadow-paper;
+    box-shadow:
+      inset 0 0 0 1px rgb(var(--line) / 0.7),
+      0 1px 0 rgb(var(--shadow) / 0.06),
+      0 2px 4px -1px rgb(var(--shadow) / 0.08),
+      0 10px 24px -12px rgb(var(--shadow) / 0.22);
+  }
+
+  /* Sewn-on patch / sticker chip: one border, a little lift. */
+  .patch {
+    @apply relative inline-flex items-center gap-1.5 rounded-[9px] bg-surface text-[13px] font-medium text-fg shadow-sticker;
+    border: 1px solid rgb(var(--line-strong) / 0.55);
+  }
+
+  /* Toggle chips in the refine panel. */
+  .chip {
+    @apply relative inline-flex h-8 items-center gap-1.5 rounded-full border border-line bg-transparent px-3 text-[13px] text-muted transition-colors duration-150 hover:border-line-strong hover:text-fg;
+  }
+  .chip[aria-pressed='true'] {
+    @apply border-fg/70 bg-fg text-bg;
+  }
+
+  /* Section labels: small caps in the UI sans, one step stronger than "subtle". */
+  .eyebrow {
+    @apply font-sans text-[13px] font-semibold tracking-[0.06em] text-muted;
+    font-variant-caps: all-small-caps;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .text-pretty {
+    text-wrap: pretty;
+  }
+  .scrollbar-none {
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+  /* Expand a small control's hit area to at least 44×44 without changing layout. */
+  .touch {
+    position: relative;
+  }
+  .touch::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: max(100%, 44px);
+    height: max(100%, 44px);
+    transform: translate(-50%, -50%);
+  }
+  .fade-x {
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
+  }
+}
+
+/* ---------- Motion ---------- */
+
+@keyframes drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(var(--r, 0deg));
+  }
+  50% {
+    transform: translate3d(0, -8px, 0) rotate(calc(var(--r, 0deg) + 1deg));
+  }
+}
+.drift {
+  animation: drift var(--d, 9s) ease-in-out infinite;
+  animation-delay: var(--delay, 0s);
+}
+
+/* Running stitch along the bottom edge of the search bar while loading. */
+@keyframes sew {
+  to {
+    background-position: 24px 0;
+  }
+}
+.sewing-line {
+  background-image: linear-gradient(90deg, rgb(var(--accent)) 0 12px, transparent 12px 24px);
+  background-size: 24px 2px;
+  animation: sew 0.45s linear infinite;
+}
+
+@keyframes caret {
+  50% {
+    opacity: 0;
+  }
+}
+.caret {
+  animation: caret 1s steps(1) infinite;
+}
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: rgb(var(--surface-3) / 0.8);
+  border-radius: 6px;
+}
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgb(var(--fg) / 0.06), transparent);
+  animation: shimmer 1.6s infinite;
+}
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.38s;
+  animation-timing-function: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}

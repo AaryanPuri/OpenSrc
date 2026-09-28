@@ -1,0 +1,918 @@
+[
+  {
+    "id": 9000,
+    "number": null,
+    "title": "Add example for graceful shutdown using CancellationToken",
+    "body": "The examples directory has no end-to-end sample of shutting down a server gracefully. A short example wiring `CancellationToken` into an accept loop would help newcomers.",
+    "html_url": "https://github.com/tokio-rs/tokio/issues?q=is%3Aissue+is%3Aopen",
+    "repository": {
+      "full_name": "tokio-rs/tokio",
+      "owner": "tokio-rs",
+      "language": "Rust",
+      "stars": 27800,
+      "topics": ["async", "networking", "runtime"]
+    },
+    "labels": [
+      {
+        "name": "good first issue",
+        "color": "7057ff"
+      },
+      {
+        "name": "A-examples",
+        "color": "c2e0c6"
+      },
+      {
+        "name": "documentation",
+        "color": "0075ca"
+      }
+    ],
+    "comments": 3,
+    "created_at": "2026-09-23T12:00:00Z",
+    "updated_at": "2026-09-23T18:00:00Z"
+  },
+  {
+    "id": 9001,
+    "number": null,
+    "title": "Support ILIKE in the SQL planner for Utf8View columns",
+    "body": "`ILIKE` currently falls back to a cast for Utf8View inputs. The planner should dispatch to the native kernel instead. Pointers to the relevant code are in the thread.",
+    "html_url": "https://github.com/apache/datafusion/issues?q=is%3Aissue+is%3Aopen",
+    "repository": {
+      "full_name": "apache/datafusion",
+      "owner": "apache",
+      "language": "Rust",
+      "stars": 7300,
+      "topics": ["database", "sql", "query-engine"]
+    },
+    "labels": [
+      {
+        "name": "good first issue",
+        "color": "7057ff"
+      },
+      {
+        "name": "enhancement",
+        "color": "a2eeef"
+      }
+    ],
+    "comments": 5,
+    "created_at": "2026-09-21T07:00:00Z",
+    "updated_at": "2026-09-21T20:00:00Z"
+  },
+  {
+    "id": 9002,
+    "number": null,
+    "title": "Improve error message when DEFINE INDEX references a missing field",
+    "body": "Defining an index on a non-existent field silently succeeds and fails later at query time. We should surface a clear error at definition time.",
+    "html_url": "https://github.com/surrealdb/surrealdb/issues?q=is%3Aissue+is%3Aopen",
+    "repository": {
+      "full_name": "surrealdb/surrealdb",
+      "owner": "surrealdb",
+      "language": "Rust",
+      "stars": 29500,
+      "topics": ["database", "graph-database"]
+    },
+    "labels": [
+      {
+        "name": "good first issue",
+        "color": "7057ff"
+      },
+      {
+        "name": "bug",
+        "color": "d73a4a"
+      }
+    ],
+    "comments": 2,
+    "created_at": "2026-09-19T02:00:00Z",
+    "updated_at": "2026-09-19T22:00:00Z"
+  },
+  {
+    "id": 9003,
+    "number": null,
+    "title": "str.pad_start docstring example renders incorrectly",
+    "body": "The rendered API reference shows escaped characters in the output table for `str.pad_start`. Likely a doctest formatting issue.",
+    "html_url": "https://github.com/pola-rs/polars/issues?q=is%3Aissue+is%3Aopen",
+    "repository": {
+      "full_name": "pola-rs/polars",
+      "owner": "pola-rs",
+      "language": "Rust",
+      "stars": 32100,
+      "topics": ["dataframe", "data-science", "python"]
+    },
+    "labels": [
+      {
+        "name": "good first issue",
+        "color": "7057ff"
+      },
+      {
+        "name": "documentation",
+        "color": "0075ca"
+      },
+      {
+        "name": "python",
+        "color": "3776ab"
+      }
+    ],
+    "comments": 1,
+    "created_at": "2026-09-24T08:00:00Z",
+    "updated_at": "2026-09-25T11:00:00Z"
+  },
+  {
+    "id": 9004,
+    "number": null,
+    "title": "DOC Add example using HistGradientBoostingClassifier with categorical features",
+    "body": "The user guide mentions native categorical support but there is no gallery example demonstrating it end to end.",
+    "html_url": "https://github.com/scikit-learn/scikit-learn/issues?q=is%3Aissue+is%3Aopen",
+    "repository": {
+      "full_name": "scikit-learn/scikit-learn",
+      "owner": "scikit-learn",
+      "language": "Python",
+      "stars": 61500,
+      "topics": ["machine-learning", "data-science"]
+    },
+    "labels": [
+      {
+        "name": "Documentation",
+        "color": "0075ca"
+      },
+      {
+        "name": "good first issue",
+        "color": "7057ff"
+      }
+    ],
+    "comments": 4,
+    "created_at": "2026-09-16T03:00:00Z",
+    "updated_at": "2026-09-17T13:00:00Z"
+  },
+  {
+    "id": 9005,
+    "number": null,
+    "title": "Add missing type hints to generate() kwargs in vision models",
+    "body": "Several vision-language models are missing type hints on `generate()` keyword arguments, which breaks IDE completion.",
+    "html_url": "https://github.com/huggingface/transformers/issues?q=is%3Aissue+is%3Aopen",
+    "repository": {
+      "full_name": "huggingface/transformers",
+      "owner": "huggingface",
+      "language": "Python",
+      "stars": 139000,
+      "topics": ["machine-learning", "nlp", "pytorch", "llm"]
+    },
+    "labels": [
+      {
+        "name": "Good First Issue",
+        "color": "7057ff"
+      },
+      {
+        "name": "typing",
+        "color": "bfdadc"
+      }
+    ],
+    "comments": 7,
+    "created_at": "2026-09-22T09:00:00Z",
+    "updated_at": "2026-09-24T02:00:00Z"
+  },
+  {
+    "id": 9006,
+    "number": null,
+    "title": "interpolate docs do not mention the antialias default",
+    "body": "`torch.nn.functional.interpolate` docs should state the default for `antialias` and how it differs between modes.",
+    "html_url": "https://github.com/pytorch/pytorch/issues?q=is%3Aissue+is%3Aopen",
+    "repository": {
+      "full_name": "pytorch/pytorch",
+      "owner": "pytorch",
+      "language": "Python",
+      "stars": 88000,
+      "topics": ["machine-learning", "deep-learning", "gpu"]
+    },
+    "labels": [
+      {
+        "name": "module: docs",
+        "color": "0075ca"
+      },
+      {
+        "name": "triaged",
+        "color": "e4e669"
+      },
+      {
+        "name": "good first issue",
+        "color": "7057ff"
+      }
+    ],
+    "comments": 2,
+    "created_at": "2026-09-13T04:00:00Z",
+    "updated_at": "2026-09-13T12:00:00Z"
+  },
+  {
+    "id": 9007,
+    "number": null,
+    "title": "BUG: read_csv with dtype_backend=\"pyarrow\" ignores na_values",
+    "body": "When `dtype_backend=\"pyarrow\"` is passed, custom `na_values` are not applied to string columns. Reproducer included.",
+    "html_url": "https://github.com/pandas-dev/pandas/issues?q=is%3Aissue+is%3Aopen",
+    "repository": {
+      "full_name": "pandas-dev/pandas",
+      "owner": "pandas-dev",
+      "language": "Python",
+      "stars": 45000,
+      "topics": ["data-analysis", "dataframe", "data-science"]
+    },
+    "labels": [
+      {
+        "name": "Bug",
+        "color": "d73a4a"
+      },
+      {
+        "name": "IO CSV",
+        "color": "5319e7"
+      },
+      {
+        "name": "Needs Tests",
+        "color": "fbca04"
+      },
+      {
+        "name": "good first issue",
+        "color": "7057ff"
+      }
+    ],
+    "comments": 6,
+    "created_at": "2026-09-20T10:00:00Z",
+    "updated_at": "2026-09-21T01:00:00Z"
+  },
+  {
+    "id": 9008,
+    "number": null,
+    "title": "kubectl explain --recursive output misaligns nested fields",
+    "body": "Deeply nested fields lose indentation in `--recursive` output when a field description spans several lines.",
+    "html_url": "https://github.com/kubernetes/kubectl/issues?q=is%3Aissue+is%3Aopen",
+    "repository": {
+      "full_name": "kubernetes/kubectl",
+      "owner": "kubernetes",
+      "language": "Go",
+      "stars": 3000,
+      "topics": ["kubernetes", "cli", "devops"]
+    },
+    "labels": [
+      {
+        "name": "kind/bug",
+        "color": "d73a4a"
+      },
+      {
+        "name": "good first issue",
+        "color": "7057ff"
+      },
+      {
+        "name": "sig/cli",
+        "color": "d2b48c"
+      }
+    ],
+    "comments": 4,
+    "created_at": "2026-09-17T05:00:00Z",
+    "updated_at": "2026-09-18T03:00:00Z"
+  },
+  {
+    "id": 9009,
+    "number": null,
+    "title": "Document using a local registry with rootless podman",
+    "body": "The local-registry guide only covers Docker. Rootless podman needs extra network configuration that we should document.",
+    "html_url": "https://github.com/kubernetes-sigs/kind/issues?q=is%3Aissue+is%3Aopen",
+    "repository": {
+      "full_name": "kubernetes-sigs/kind",
+      "owner": "kubernetes-sigs",
+      "language": "Go",
+      "stars": 14200,
+      "topics": ["kubernetes", "docker", "testing"]
+    },
+    "labels": [
+      {
+        "name": "kind/documentation",
+        "color": "0075ca"
+      },
+      {
+        "name": "help wanted",
+        "color": "008672"
+      }
+    ],
+    "comments": 3,
+    "created_at": "2026-09-10T11:00:00Z",
+    "updated_at": "2026-09-11T16:00:00Z"
+  },
+  {
+    "id": 9010,
+    "number": null,
+    "title": "helm lint should warn on deprecated apiVersion in templates",
+    "body": "Linting passes for charts that still render removed API versions. A warning with the replacement version would save users a failed deploy.",
+    "html_url": "https://github.com/helm/helm/issues?q=is%3Aissue+is%3Aopen",
+    "repository": {
+      "full_name": "helm/helm",
+      "owner": "helm",
+      "language": "Go",
+      "stars": 27500,
+      "topics": ["kubernetes", "helm", "devops"]
+    },
+    "labels": [
+      {
+        "name": "good first issue",
+        "color": "7057ff"
+      },
+      {
+        "name": "feature",
+        "color": "a2eeef"
+      }
+    ],
+    "comments": 9,
+    "created_at": "2026-09-05T06:00:00Z",
+    "updated_at": "2026-09-06T18:00:00Z"
+  },
+  {
+    "id": 9011,
+    "number": null,
+    "title": "gh repo clone should suggest similar repository names on 404",
+    "body": "When a clone fails because of a typo, suggest the closest matching repositories the user has access to.",
+    "html_url": "https://github.com/cli/cli/issues?q=is%3Aissue+is%3Aopen",
+    "repository": {
+      "full_name": "cli/cli",
+      "owner": "cli",
+      "language": "Go",
+      "stars": 38000,
+      "topics": ["cli", "git", "terminal"]
+    },
+    "labels": [
+      {
+        "name": "enhancement",
+        "color": "a2eeef"
+      },
+      {
+        "name": "help wanted",
+        "color": "008672"
+      }
+    ],
+    "comments": 5,
+    "created_at": "2026-09-14T12:00:00Z",
+    "updated_at": "2026-09-16T07:00:00Z"
+  },
+  {
+    "id": 9012,
+    "number": null,
+    "title": "Preview window flickers while resizing on Windows Terminal",
+    "body": "Resizing the terminal with an open preview window causes visible flicker. Seems related to how the screen is cleared on resize.",
+    "html_url": "https://github.com/junegunn/fzf/issues?q=is%3Aissue+is%3Aopen",
+    "repository": {
+      "full_name": "junegunn/fzf",
+      "owner": "junegunn",
+      "language": "Go",
+      "stars": 68000,
+      "topics": ["cli", "terminal", "tui"]
+    },
+    "labels": [
+      {
+        "name": "bug",
+        "color": "d73a4a"
+      }
+    ],
+    "comments": 8,
+    "created_at": "2026-09-18T07:00:00Z",
+    "updated_at": "2026-09-18T17:00:00Z"
+  },
+  {
+    "id": 9013,
+    "number": null,
+    "title": "DevTools: component filter input lacks an accessible label",
+    "body": "The filter input in the Components panel has only a placeholder, so screen readers announce it as \"edit text\".",
+    "html_url": "https://github.com/facebook/react/issues?q=is%3Aissue+is%3Aopen",
+    "repository": {
+      "full_name": "facebook/react",
+      "owner": "facebook",
+      "language": "JavaScript",
+      "stars": 235000,
+      "topics": ["frontend", "ui", "javascript"]
+    },
+    "labels": [
+      {
+        "name": "Component: Developer Tools",
+        "color": "fbca04"
+      },
+      {
+        "name": "good first issue",
+        "color": "7057ff"
+      },
+      {
+        "name": "accessibility",
+        "color": "5319e7"
+      }
+    ],
+    "comments": 3,
+    "created_at": "2026-09-21T02:00:00Z",
+    "updated_at": "2026-09-21T19:00:00Z"
+  },
+  {
+    "id": 9014,
+    "number": null,
+    "title": "Docs: clarify revalidateTag behaviour inside route handlers",
+    "body": "The caching docs do not explain whether `revalidateTag` in a route handler affects the current request. A short note plus example would help.",
+    "html_url": "https://github.com/vercel/next.js/issues?q=is%3Aissue+is%3Aopen",
+    "repository": {
+      "full_name": "vercel/next.js",
+      "owner": "vercel",
+      "language": "TypeScript",
+      "stars": 131000,
+      "topics": ["react", "frontend", "ssr"]
+    },
+    "labels": [
+      {
+        "name": "documentation",
+        "color": "0075ca"
+      },
+      {
+        "name": "good first issue",
+        "color": "7057ff"
+      }
+    ],
+    "comments": 6,
+    "created_at": "2026-09-15T08:00:00Z",
+    "updated_at": "2026-09-16T08:00:00Z"
+  },
+  {
+    "id": 9015,
+    "number": null,
+    "title": "[Slider] Screen readers announce value twice with keyboard input",
+    "body": "Using arrow keys on the Slider causes NVDA to read the new value twice because both `aria-valuetext` and a live region update.",
+    "html_url": "https://github.com/mui/material-ui/issues?q=is%3Aissue+is%3Aopen",
+    "repository": {
+      "full_name": "mui/material-ui",
+      "owner": "mui",
+      "language": "TypeScript",
+      "stars": 95000,
+      "topics": ["react", "design-system", "ui"]
+    },
+    "labels": [
+      {
+        "name": "accessibility",
+        "color": "5319e7"
+      },
+      {
+        "name": "bug",
+        "color": "d73a4a"
+      },
+      {
+        "name": "good first issue",
+        "color": "7057ff"
+      }
+    ],
+    "comments": 4,
+    "created_at": "2026-09-23T03:00:00Z",
+    "updated_at": "2026-09-24T10:00:00Z"
+  },
+  {
+    "id": 9016,
+    "number": null,
+    "title": "Add aria-current to the active nav link in the blog starter",
+    "body": "The blog template highlights the active link visually but does not expose it to assistive tech.",
+    "html_url": "https://github.com/withastro/astro/issues?q=is%3Aissue+is%3Aopen",
+    "repository": {
+      "full_name": "withastro/astro",
+      "owner": "withastro",
+      "language": "TypeScript",
+      "stars": 49000,
+      "topics": ["static-site-generator", "frontend", "documentation"]
+    },
+    "labels": [
+      {
+        "name": "good first issue",
+        "color": "7057ff"
+      },
+      {
+        "name": "accessibility",
+        "color": "5319e7"
+      }
+    ],
+    "comments": 1,
+    "created_at": "2026-09-24T09:00:00Z",
+    "updated_at": "2026-09-25T12:00:00Z"
+  },
+  {
+    "id": 9017,
+    "number": null,
+    "title": "a11y warning false positive for button inside label",
+    "body": "`a11y_label_has_associated_control` fires when a `<label>` wraps a `<button>`, which is valid HTML.",
+    "html_url": "https://github.com/sveltejs/svelte/issues?q=is%3Aissue+is%3Aopen",
+    "repository": {
+      "full_name": "sveltejs/svelte",
+      "owner": "sveltejs",
+      "language": "JavaScript",
+      "stars": 82000,
+      "topics": ["frontend", "compiler", "ui"]
+    },
+    "labels": [
+      {
+        "name": "bug",
+        "color": "d73a4a"
+      },
+      {
+        "name": "good first issue",
+        "color": "7057ff"
+      },
+      {
+        "name": "a11y",
+        "color": "5319e7"
+      }
+    ],
+    "comments": 7,
+    "created_at": "2026-09-12T04:00:00Z",
+    "updated_at": "2026-09-14T01:00:00Z"
+  },
+  {
+    "id": 9018,
+    "number": null,
+    "title": "Add example: 2D camera zoom with the mouse wheel",
+    "body": "A small example showing orthographic projection scaling from mouse wheel input would round out the 2D camera examples.",
+    "html_url": "https://github.com/bevyengine/bevy/issues?q=is%3Aissue+is%3Aopen",
+    "repository": {
+      "full_name": "bevyengine/bevy",
+      "owner": "bevyengine",
+      "language": "Rust",
+      "stars": 39000,
+      "topics": ["game-engine", "gamedev", "ecs"]
+    },
+    "labels": [
+      {
+        "name": "A-Rendering",
+        "color": "0e8a16"
+      },
+      {
+        "name": "C-Examples",
+        "color": "c5def5"
+      },
+      {
+        "name": "D-Straightforward",
+        "color": "bfd4f2"
+      },
+      {
+        "name": "D-Good-First-Issue",
+        "color": "7057ff"
+      }
+    ],
+    "comments": 2,
+    "created_at": "2026-09-22T10:00:00Z",
+    "updated_at": "2026-09-22T22:00:00Z"
+  },
+  {
+    "id": 9019,
+    "number": null,
+    "title": "Class reference: TileMapLayer.navigation_enabled has no description",
+    "body": "The property appears in the editor with an empty tooltip. Needs a short description in the XML class reference.",
+    "html_url": "https://github.com/godotengine/godot/issues?q=is%3Aissue+is%3Aopen",
+    "repository": {
+      "full_name": "godotengine/godot",
+      "owner": "godotengine",
+      "language": "C++",
+      "stars": 95000,
+      "topics": ["game-engine", "gamedev"]
+    },
+    "labels": [
+      {
+        "name": "documentation",
+        "color": "0075ca"
+      },
+      {
+        "name": "junior job",
+        "color": "2ea44f"
+      }
+    ],
+    "comments": 1,
+    "created_at": "2026-09-19T05:00:00Z",
+    "updated_at": "2026-09-20T00:00:00Z"
+  },
+  {
+    "id": 9020,
+    "number": null,
+    "title": ":checkhealth should report a misconfigured clipboard provider",
+    "body": "If `g:clipboard` points at a missing binary, `:checkhealth` reports OK. It should detect and explain the failure.",
+    "html_url": "https://github.com/neovim/neovim/issues?q=is%3Aissue+is%3Aopen",
+    "repository": {
+      "full_name": "neovim/neovim",
+      "owner": "neovim",
+      "language": "Vim Script",
+      "stars": 86000,
+      "topics": ["editor", "vim", "lua"]
+    },
+    "labels": [
+      {
+        "name": "enhancement",
+        "color": "a2eeef"
+      },
+      {
+        "name": "good first issue",
+        "color": "7057ff"
+      }
+    ],
+    "comments": 4,
+    "created_at": "2026-09-07T11:00:00Z",
+    "updated_at": "2026-09-08T13:00:00Z"
+  },
+  {
+    "id": 9021,
+    "number": null,
+    "title": "Keybinding editor search should match \"when\" clause text",
+    "body": "Searching the keybindings editor ignores the `when` column, which makes it hard to find context-specific bindings.",
+    "html_url": "https://github.com/microsoft/vscode/issues?q=is%3Aissue+is%3Aopen",
+    "repository": {
+      "full_name": "microsoft/vscode",
+      "owner": "microsoft",
+      "language": "TypeScript",
+      "stars": 170000,
+      "topics": ["editor", "electron", "typescript"]
+    },
+    "labels": [
+      {
+        "name": "feature-request",
+        "color": "c5def5"
+      },
+      {
+        "name": "help wanted",
+        "color": "008672"
+      }
+    ],
+    "comments": 12,
+    "created_at": "2026-08-31T06:00:00Z",
+    "updated_at": "2026-09-01T15:00:00Z"
+  },
+  {
+    "id": 9022,
+    "number": null,
+    "title": "cmd/geth: clarify help text for --history.state flag",
+    "body": "The flag help does not explain the unit or what 0 means. Align it with the docs page.",
+    "html_url": "https://github.com/ethereum/go-ethereum/issues?q=is%3Aissue+is%3Aopen",
+    "repository": {
+      "full_name": "ethereum/go-ethereum",
+      "owner": "ethereum",
+      "language": "Go",
+      "stars": 48500,
+      "topics": ["ethereum", "blockchain", "p2p"]
+    },
+    "labels": [
+      {
+        "name": "good first issue",
+        "color": "7057ff"
+      }
+    ],
+    "comments": 2,
+    "created_at": "2026-09-16T12:00:00Z",
+    "updated_at": "2026-09-18T04:00:00Z"
+  },
+  {
+    "id": 9023,
+    "number": null,
+    "title": "TextField semantics label not read by TalkBack when hint is set",
+    "body": "With both `labelText` and `hintText`, TalkBack only announces the hint on Android 14.",
+    "html_url": "https://github.com/flutter/flutter/issues?q=is%3Aissue+is%3Aopen",
+    "repository": {
+      "full_name": "flutter/flutter",
+      "owner": "flutter",
+      "language": "Dart",
+      "stars": 168000,
+      "topics": ["mobile", "android", "ios"]
+    },
+    "labels": [
+      {
+        "name": "a: accessibility",
+        "color": "5319e7"
+      },
+      {
+        "name": "platform-android",
+        "color": "a4c639"
+      },
+      {
+        "name": "good first issue",
+        "color": "7057ff"
+      }
+    ],
+    "comments": 5,
+    "created_at": "2026-09-11T07:00:00Z",
+    "updated_at": "2026-09-11T14:00:00Z"
+  },
+  {
+    "id": 9024,
+    "number": null,
+    "title": "Add detector for the new Linear API key format",
+    "body": "Linear introduced a new key prefix. Add a detector with verification against the viewer endpoint.",
+    "html_url": "https://github.com/trufflesecurity/trufflehog/issues?q=is%3Aissue+is%3Aopen",
+    "repository": {
+      "full_name": "trufflesecurity/trufflehog",
+      "owner": "trufflesecurity",
+      "language": "Go",
+      "stars": 18000,
+      "topics": ["security", "secrets", "scanner"]
+    },
+    "labels": [
+      {
+        "name": "good first issue",
+        "color": "7057ff"
+      },
+      {
+        "name": "detector",
+        "color": "0e8a16"
+      }
+    ],
+    "comments": 3,
+    "created_at": "2026-09-20T02:00:00Z",
+    "updated_at": "2026-09-20T16:00:00Z"
+  },
+  {
+    "id": 9025,
+    "number": null,
+    "title": "promtool check rules should print the file name on YAML errors",
+    "body": "When several rule files are checked at once, a parse error does not say which file failed.",
+    "html_url": "https://github.com/prometheus/prometheus/issues?q=is%3Aissue+is%3Aopen",
+    "repository": {
+      "full_name": "prometheus/prometheus",
+      "owner": "prometheus",
+      "language": "Go",
+      "stars": 57000,
+      "topics": ["monitoring", "observability", "metrics"]
+    },
+    "labels": [
+      {
+        "name": "kind/enhancement",
+        "color": "a2eeef"
+      },
+      {
+        "name": "help wanted",
+        "color": "008672"
+      }
+    ],
+    "comments": 2,
+    "created_at": "2026-09-09T08:00:00Z",
+    "updated_at": "2026-09-10T05:00:00Z"
+  },
+  {
+    "id": 9026,
+    "number": null,
+    "title": "Assist: convert match on bool into if/else",
+    "body": "Add an assist that rewrites `match b { true => .., false => .. }` into an `if` expression.",
+    "html_url": "https://github.com/rust-lang/rust-analyzer/issues?q=is%3Aissue+is%3Aopen",
+    "repository": {
+      "full_name": "rust-lang/rust-analyzer",
+      "owner": "rust-lang",
+      "language": "Rust",
+      "stars": 15000,
+      "topics": ["compiler", "lsp", "ide"]
+    },
+    "labels": [
+      {
+        "name": "E-easy",
+        "color": "02e10c"
+      },
+      {
+        "name": "C-feature",
+        "color": "c2e0c6"
+      },
+      {
+        "name": "good first issue",
+        "color": "7057ff"
+      }
+    ],
+    "comments": 1,
+    "created_at": "2026-09-18T03:00:00Z",
+    "updated_at": "2026-09-19T07:00:00Z"
+  },
+  {
+    "id": 9027,
+    "number": null,
+    "title": "[clang-format] AllowShortEnumsOnASingleLine ignored when enum has a trailing comment",
+    "body": "Enums that would fit on one line get broken up if the last enumerator has a trailing comment.",
+    "html_url": "https://github.com/llvm/llvm-project/issues?q=is%3Aissue+is%3Aopen",
+    "repository": {
+      "full_name": "llvm/llvm-project",
+      "owner": "llvm",
+      "language": "C++",
+      "stars": 32000,
+      "topics": ["compiler", "llvm", "clang"]
+    },
+    "labels": [
+      {
+        "name": "clang-format",
+        "color": "fef2c0"
+      },
+      {
+        "name": "good first issue",
+        "color": "7057ff"
+      }
+    ],
+    "comments": 6,
+    "created_at": "2026-09-03T09:00:00Z",
+    "updated_at": "2026-09-04T20:00:00Z"
+  },
+  {
+    "id": 9028,
+    "number": null,
+    "title": "drivers: sensor: add unit tests for the bme280 decoder",
+    "body": "The new decoder API for bme280 has no ztest coverage. Tests should cover each channel conversion.",
+    "html_url": "https://github.com/zephyrproject-rtos/zephyr/issues?q=is%3Aissue+is%3Aopen",
+    "repository": {
+      "full_name": "zephyrproject-rtos/zephyr",
+      "owner": "zephyrproject-rtos",
+      "language": "C",
+      "stars": 12500,
+      "topics": ["embedded", "rtos", "iot"]
+    },
+    "labels": [
+      {
+        "name": "Enhancement",
+        "color": "a2eeef"
+      },
+      {
+        "name": "good first issue",
+        "color": "7057ff"
+      },
+      {
+        "name": "area: Tests",
+        "color": "fbca04"
+      }
+    ],
+    "comments": 0,
+    "created_at": "2026-09-21T04:00:00Z",
+    "updated_at": "2026-09-22T22:00:00Z"
+  },
+  {
+    "id": 9029,
+    "number": null,
+    "title": "Add test for HTTP/1 header case preservation with trailers",
+    "body": "Header case preservation is untested when chunked trailers are present. A client and server test would pin down behaviour.",
+    "html_url": "https://github.com/hyperium/hyper/issues?q=is%3Aissue+is%3Aopen",
+    "repository": {
+      "full_name": "hyperium/hyper",
+      "owner": "hyperium",
+      "language": "Rust",
+      "stars": 15500,
+      "topics": ["http", "networking", "async"]
+    },
+    "labels": [
+      {
+        "name": "A-tests",
+        "color": "fbca04"
+      },
+      {
+        "name": "E-easy",
+        "color": "02e10c"
+      }
+    ],
+    "comments": 1,
+    "created_at": "2026-09-22T10:00:00Z",
+    "updated_at": "2026-09-22T19:00:00Z"
+  },
+  {
+    "id": 9030,
+    "number": null,
+    "title": "Improve error when COPY TO target directory does not exist",
+    "body": "`COPY ... TO` into a missing directory reports a generic IO error. It should name the missing path.",
+    "html_url": "https://github.com/duckdb/duckdb/issues?q=is%3Aissue+is%3Aopen",
+    "repository": {
+      "full_name": "duckdb/duckdb",
+      "owner": "duckdb",
+      "language": "C++",
+      "stars": 30000,
+      "topics": ["database", "sql", "analytics"]
+    },
+    "labels": [
+      {
+        "name": "good first issue",
+        "color": "7057ff"
+      },
+      {
+        "name": "Needs Documentation",
+        "color": "0075ca"
+      }
+    ],
+    "comments": 3,
+    "created_at": "2026-09-17T05:00:00Z",
+    "updated_at": "2026-09-17T21:00:00Z"
+  },
+  {
+    "id": 9031,
+    "number": null,
+    "title": "Improve contrast of execution count in the dark theme",
+    "body": "The execution count prompt fails WCAG AA contrast in the dark theme (3.1:1).",
+    "html_url": "https://github.com/jupyterlab/jupyterlab/issues?q=is%3Aissue+is%3Aopen",
+    "repository": {
+      "full_name": "jupyterlab/jupyterlab",
+      "owner": "jupyterlab",
+      "language": "TypeScript",
+      "stars": 14500,
+      "topics": ["jupyter", "notebook", "data-science"]
+    },
+    "labels": [
+      {
+        "name": "good first issue",
+        "color": "7057ff"
+      },
+      {
+        "name": "accessibility",
+        "color": "5319e7"
+      },
+      {
+        "name": "tag:Design System CSS",
+        "color": "bfdadc"
+      }
+    ],
+    "comments": 2,
+    "created_at": "2026-09-23T11:00:00Z",
+    "updated_at": "2026-09-24T10:00:00Z"
+  }
+]

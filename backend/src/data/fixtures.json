@@ -1,0 +1,934 @@
+[
+  {
+    "id": 900000,
+    "number": 1000,
+    "title": "Support `ALTER TABLE ... RENAME COLUMN` in the SQL parser",
+    "url": "https://github.com/tursodatabase/limbo/contribute",
+    "repo": {
+      "fullName": "tursodatabase/limbo",
+      "owner": "tursodatabase",
+      "avatarUrl": "https://github.com/tursodatabase.png?size=64",
+      "url": "https://github.com/tursodatabase/limbo",
+      "stars": 9800,
+      "language": "Rust"
+    },
+    "labels": [
+      {
+        "name": "good first issue",
+        "color": "7057ff"
+      },
+      {
+        "name": "enhancement",
+        "color": "a2eeef"
+      }
+    ],
+    "comments": 3,
+    "createdAt": "2026-08-31T06:00:00.000Z",
+    "updatedAt": "2026-09-01T06:00:00.000Z",
+    "bodyExcerpt": "The database parser currently rejects RENAME COLUMN. Add grammar support and a translation to the schema update path, plus SQL tests.",
+    "author": "demo-user"
+  },
+  {
+    "id": 900001,
+    "number": 1017,
+    "title": "Add `array_distinct` example to the SQL function docs",
+    "url": "https://github.com/apache/datafusion/contribute",
+    "repo": {
+      "fullName": "apache/datafusion",
+      "owner": "apache",
+      "avatarUrl": "https://github.com/apache.png?size=64",
+      "url": "https://github.com/apache/datafusion",
+      "stars": 7200,
+      "language": "Rust"
+    },
+    "labels": [
+      {
+        "name": "good first issue",
+        "color": "7057ff"
+      },
+      {
+        "name": "documentation",
+        "color": "0075ca"
+      }
+    ],
+    "comments": 1,
+    "createdAt": "2026-08-22T00:00:00.000Z",
+    "updatedAt": "2026-08-24T00:00:00.000Z",
+    "bodyExcerpt": "The SQL reference for array functions is missing an example for array_distinct. Add a short example showing input and output.",
+    "author": "demo-user"
+  },
+  {
+    "id": 900002,
+    "number": 1034,
+    "title": "Improve error message when a record id is malformed",
+    "url": "https://github.com/surrealdb/surrealdb/contribute",
+    "repo": {
+      "fullName": "surrealdb/surrealdb",
+      "owner": "surrealdb",
+      "avatarUrl": "https://github.com/surrealdb.png?size=64",
+      "url": "https://github.com/surrealdb/surrealdb",
+      "stars": 29000,
+      "language": "Rust"
+    },
+    "labels": [
+      {
+        "name": "good first issue",
+        "color": "7057ff"
+      },
+      {
+        "name": "bug",
+        "color": "d73a4a"
+      }
+    ],
+    "comments": 4,
+    "createdAt": "2026-08-12T18:00:00.000Z",
+    "updatedAt": "2026-08-15T18:00:00.000Z",
+    "bodyExcerpt": "Querying the database with a malformed record id returns a generic parse error. It should point at the offending token.",
+    "author": "demo-user"
+  },
+  {
+    "id": 900003,
+    "number": 1051,
+    "title": "pageserver: add unit tests for layer map eviction",
+    "url": "https://github.com/neondatabase/neon/contribute",
+    "repo": {
+      "fullName": "neondatabase/neon",
+      "owner": "neondatabase",
+      "avatarUrl": "https://github.com/neondatabase.png?size=64",
+      "url": "https://github.com/neondatabase/neon",
+      "stars": 15000,
+      "language": "Rust"
+    },
+    "labels": [
+      {
+        "name": "help wanted",
+        "color": "008672"
+      },
+      {
+        "name": "testing",
+        "color": "fbca04"
+      }
+    ],
+    "comments": 2,
+    "createdAt": "2026-08-03T12:00:00.000Z",
+    "updatedAt": "2026-08-07T12:00:00.000Z",
+    "bodyExcerpt": "Eviction logic in the storage layer map lacks direct unit tests. Add tests covering the LRU ordering edge cases.",
+    "author": "demo-user"
+  },
+  {
+    "id": 900004,
+    "number": 1068,
+    "title": "sql: `SHOW CREATE` omits comment on computed columns",
+    "url": "https://github.com/cockroachdb/cockroach/contribute",
+    "repo": {
+      "fullName": "cockroachdb/cockroach",
+      "owner": "cockroachdb",
+      "avatarUrl": "https://github.com/cockroachdb.png?size=64",
+      "url": "https://github.com/cockroachdb/cockroach",
+      "stars": 30500,
+      "language": "Go"
+    },
+    "labels": [
+      {
+        "name": "help wanted",
+        "color": "008672"
+      },
+      {
+        "name": "bug",
+        "color": "d73a4a"
+      }
+    ],
+    "comments": 5,
+    "createdAt": "2026-07-25T06:00:00.000Z",
+    "updatedAt": "2026-07-30T06:00:00.000Z",
+    "bodyExcerpt": "When a computed column has a COMMENT, SHOW CREATE TABLE drops it. Database round-trips lose metadata.",
+    "author": "demo-user"
+  },
+  {
+    "id": 900005,
+    "number": 1085,
+    "title": "kubectl explain: document `--output=plaintext-openapiv2` flag",
+    "url": "https://github.com/kubernetes/kubectl/contribute",
+    "repo": {
+      "fullName": "kubernetes/kubectl",
+      "owner": "kubernetes",
+      "avatarUrl": "https://github.com/kubernetes.png?size=64",
+      "url": "https://github.com/kubernetes/kubectl",
+      "stars": 2900,
+      "language": "Go"
+    },
+    "labels": [
+      {
+        "name": "good first issue",
+        "color": "7057ff"
+      },
+      {
+        "name": "documentation",
+        "color": "0075ca"
+      }
+    ],
+    "comments": 2,
+    "createdAt": "2026-07-16T00:00:00.000Z",
+    "updatedAt": "2026-07-17T00:00:00.000Z",
+    "bodyExcerpt": "The CLI help text does not mention the plaintext-openapiv2 output option. Update the flag docs.",
+    "author": "demo-user"
+  },
+  {
+    "id": 900006,
+    "number": 1102,
+    "title": "Add missing unit tests for pkg/kubelet/util/format",
+    "url": "https://github.com/kubernetes/kubernetes/contribute",
+    "repo": {
+      "fullName": "kubernetes/kubernetes",
+      "owner": "kubernetes",
+      "avatarUrl": "https://github.com/kubernetes.png?size=64",
+      "url": "https://github.com/kubernetes/kubernetes",
+      "stars": 112000,
+      "language": "Go"
+    },
+    "labels": [
+      {
+        "name": "good first issue",
+        "color": "7057ff"
+      },
+      {
+        "name": "testing",
+        "color": "fbca04"
+      }
+    ],
+    "comments": 6,
+    "createdAt": "2026-07-06T18:00:00.000Z",
+    "updatedAt": "2026-07-08T18:00:00.000Z",
+    "bodyExcerpt": "The format helpers in kubelet have no test coverage. Add table-driven tests. Good for newcomers to the Kubernetes codebase.",
+    "author": "demo-user"
+  },
+  {
+    "id": 900007,
+    "number": 1119,
+    "title": "Terminal program panics on resize when alt screen disabled",
+    "url": "https://github.com/charmbracelet/bubbletea/contribute",
+    "repo": {
+      "fullName": "charmbracelet/bubbletea",
+      "owner": "charmbracelet",
+      "avatarUrl": "https://github.com/charmbracelet.png?size=64",
+      "url": "https://github.com/charmbracelet/bubbletea",
+      "stars": 29000,
+      "language": "Go"
+    },
+    "labels": [
+      {
+        "name": "bug",
+        "color": "d73a4a"
+      },
+      {
+        "name": "help wanted",
+        "color": "008672"
+      }
+    ],
+    "comments": 7,
+    "createdAt": "2026-06-27T12:00:00.000Z",
+    "updatedAt": "2026-06-30T12:00:00.000Z",
+    "bodyExcerpt": "Resizing the terminal quickly in inline mode can trigger a panic in the renderer. Repro attached.",
+    "author": "demo-user"
+  },
+  {
+    "id": 900008,
+    "number": 1136,
+    "title": "`gh issue list` should support `--json` field `closedByPullRequestsReferences`",
+    "url": "https://github.com/cli/cli/contribute",
+    "repo": {
+      "fullName": "cli/cli",
+      "owner": "cli",
+      "avatarUrl": "https://github.com/cli.png?size=64",
+      "url": "https://github.com/cli/cli",
+      "stars": 38000,
+      "language": "Go"
+    },
+    "labels": [
+      {
+        "name": "enhancement",
+        "color": "a2eeef"
+      },
+      {
+        "name": "help wanted",
+        "color": "008672"
+      }
+    ],
+    "comments": 4,
+    "createdAt": "2026-06-18T06:00:00.000Z",
+    "updatedAt": "2026-06-22T06:00:00.000Z",
+    "bodyExcerpt": "Expose the linked PRs field in the CLI JSON output for issues.",
+    "author": "demo-user"
+  },
+  {
+    "id": 900009,
+    "number": 1153,
+    "title": "DOC: fix docstring examples for DataFrame.melt",
+    "url": "https://github.com/pandas-dev/pandas/contribute",
+    "repo": {
+      "fullName": "pandas-dev/pandas",
+      "owner": "pandas-dev",
+      "avatarUrl": "https://github.com/pandas-dev.png?size=64",
+      "url": "https://github.com/pandas-dev/pandas",
+      "stars": 44000,
+      "language": "Python"
+    },
+    "labels": [
+      {
+        "name": "good first issue",
+        "color": "7057ff"
+      },
+      {
+        "name": "documentation",
+        "color": "0075ca"
+      }
+    ],
+    "comments": 3,
+    "createdAt": "2026-06-09T00:00:00.000Z",
+    "updatedAt": "2026-06-14T00:00:00.000Z",
+    "bodyExcerpt": "The examples in the melt docstring do not render correctly and one uses a deprecated argument. Update them.",
+    "author": "demo-user"
+  },
+  {
+    "id": 900010,
+    "number": 1170,
+    "title": "Add input validation tests for `KBinsDiscretizer` sample weights",
+    "url": "https://github.com/scikit-learn/scikit-learn/contribute",
+    "repo": {
+      "fullName": "scikit-learn/scikit-learn",
+      "owner": "scikit-learn",
+      "avatarUrl": "https://github.com/scikit-learn.png?size=64",
+      "url": "https://github.com/scikit-learn/scikit-learn",
+      "stars": 60500,
+      "language": "Python"
+    },
+    "labels": [
+      {
+        "name": "help wanted",
+        "color": "008672"
+      },
+      {
+        "name": "testing",
+        "color": "fbca04"
+      }
+    ],
+    "comments": 2,
+    "createdAt": "2026-05-30T18:00:00.000Z",
+    "updatedAt": "2026-05-31T18:00:00.000Z",
+    "bodyExcerpt": "Machine learning preprocessing estimator should raise a clear error for negative sample weights. Add tests.",
+    "author": "demo-user"
+  },
+  {
+    "id": 900011,
+    "number": 1187,
+    "title": "Model card template: fix broken link to training docs",
+    "url": "https://github.com/huggingface/transformers/contribute",
+    "repo": {
+      "fullName": "huggingface/transformers",
+      "owner": "huggingface",
+      "avatarUrl": "https://github.com/huggingface.png?size=64",
+      "url": "https://github.com/huggingface/transformers",
+      "stars": 136000,
+      "language": "Python"
+    },
+    "labels": [
+      {
+        "name": "good first issue",
+        "color": "7057ff"
+      },
+      {
+        "name": "documentation",
+        "color": "0075ca"
+      }
+    ],
+    "comments": 1,
+    "createdAt": "2026-05-21T12:00:00.000Z",
+    "updatedAt": "2026-05-23T12:00:00.000Z",
+    "bodyExcerpt": "The auto-generated model card links to a moved training page. Update the template link.",
+    "author": "demo-user"
+  },
+  {
+    "id": 900012,
+    "number": 1204,
+    "title": "torch.nn.functional.pad error message mentions wrong argument name",
+    "url": "https://github.com/pytorch/pytorch/contribute",
+    "repo": {
+      "fullName": "pytorch/pytorch",
+      "owner": "pytorch",
+      "avatarUrl": "https://github.com/pytorch.png?size=64",
+      "url": "https://github.com/pytorch/pytorch",
+      "stars": 84000,
+      "language": "Python"
+    },
+    "labels": [
+      {
+        "name": "good first issue",
+        "color": "7057ff"
+      },
+      {
+        "name": "bug",
+        "color": "d73a4a"
+      }
+    ],
+    "comments": 3,
+    "createdAt": "2026-05-12T06:00:00.000Z",
+    "updatedAt": "2026-05-15T06:00:00.000Z",
+    "bodyExcerpt": "When padding length is odd the error message refers to `pad_size` instead of `pad`. Small fix in the model code path.",
+    "author": "demo-user"
+  },
+  {
+    "id": 900013,
+    "number": 1221,
+    "title": "st.dataframe: column header tooltip is not announced by screen readers",
+    "url": "https://github.com/streamlit/streamlit/contribute",
+    "repo": {
+      "fullName": "streamlit/streamlit",
+      "owner": "streamlit",
+      "avatarUrl": "https://github.com/streamlit.png?size=64",
+      "url": "https://github.com/streamlit/streamlit",
+      "stars": 36000,
+      "language": "Python"
+    },
+    "labels": [
+      {
+        "name": "accessibility",
+        "color": "c5def5"
+      },
+      {
+        "name": "bug",
+        "color": "d73a4a"
+      }
+    ],
+    "comments": 2,
+    "createdAt": "2026-05-03T00:00:00.000Z",
+    "updatedAt": "2026-05-07T00:00:00.000Z",
+    "bodyExcerpt": "Accessibility: tooltips on column headers lack aria-describedby so screen reader users never hear them.",
+    "author": "demo-user"
+  },
+  {
+    "id": 900014,
+    "number": 1238,
+    "title": "DevTools: components tree loses keyboard focus after filter change",
+    "url": "https://github.com/facebook/react/contribute",
+    "repo": {
+      "fullName": "facebook/react",
+      "owner": "facebook",
+      "avatarUrl": "https://github.com/facebook.png?size=64",
+      "url": "https://github.com/facebook/react",
+      "stars": 230000,
+      "language": "JavaScript"
+    },
+    "labels": [
+      {
+        "name": "accessibility",
+        "color": "c5def5"
+      },
+      {
+        "name": "bug",
+        "color": "d73a4a"
+      }
+    ],
+    "comments": 8,
+    "createdAt": "2026-04-23T18:00:00.000Z",
+    "updatedAt": "2026-04-28T18:00:00.000Z",
+    "bodyExcerpt": "Accessibility bug: after changing the component filter, keyboard focus is reset to the document body. Keyboard navigation users must tab through the whole UI again.",
+    "author": "demo-user"
+  },
+  {
+    "id": 900015,
+    "number": 1255,
+    "title": "[Autocomplete] `aria-activedescendant` points to a removed option",
+    "url": "https://github.com/mui/material-ui/contribute",
+    "repo": {
+      "fullName": "mui/material-ui",
+      "owner": "mui",
+      "avatarUrl": "https://github.com/mui.png?size=64",
+      "url": "https://github.com/mui/material-ui",
+      "stars": 94000,
+      "language": "TypeScript"
+    },
+    "labels": [
+      {
+        "name": "accessibility",
+        "color": "c5def5"
+      },
+      {
+        "name": "bug",
+        "color": "d73a4a"
+      },
+      {
+        "name": "good first issue",
+        "color": "7057ff"
+      }
+    ],
+    "comments": 5,
+    "createdAt": "2026-04-14T12:00:00.000Z",
+    "updatedAt": "2026-04-15T12:00:00.000Z",
+    "bodyExcerpt": "Frontend accessibility issue: when options are filtered, aria-activedescendant can reference a node that no longer exists in the React component.",
+    "author": "demo-user"
+  },
+  {
+    "id": 900016,
+    "number": 1272,
+    "title": "Docs: clarify `trailingSlash` behaviour with static site builds",
+    "url": "https://github.com/withastro/astro/contribute",
+    "repo": {
+      "fullName": "withastro/astro",
+      "owner": "withastro",
+      "avatarUrl": "https://github.com/withastro.png?size=64",
+      "url": "https://github.com/withastro/astro",
+      "stars": 48000,
+      "language": "TypeScript"
+    },
+    "labels": [
+      {
+        "name": "documentation",
+        "color": "0075ca"
+      },
+      {
+        "name": "good first issue",
+        "color": "7057ff"
+      }
+    ],
+    "comments": 2,
+    "createdAt": "2026-04-05T06:00:00.000Z",
+    "updatedAt": "2026-04-07T06:00:00.000Z",
+    "bodyExcerpt": "The static site docs don't explain how trailingSlash interacts with build.format. Add a table.",
+    "author": "demo-user"
+  },
+  {
+    "id": 900017,
+    "number": 1289,
+    "title": "Improve error message when `optimizeDeps.include` entry cannot be resolved",
+    "url": "https://github.com/vitejs/vite/contribute",
+    "repo": {
+      "fullName": "vitejs/vite",
+      "owner": "vitejs",
+      "avatarUrl": "https://github.com/vitejs.png?size=64",
+      "url": "https://github.com/vitejs/vite",
+      "stars": 70000,
+      "language": "TypeScript"
+    },
+    "labels": [
+      {
+        "name": "enhancement",
+        "color": "a2eeef"
+      },
+      {
+        "name": "help wanted",
+        "color": "008672"
+      }
+    ],
+    "comments": 4,
+    "createdAt": "2026-03-27T00:00:00.000Z",
+    "updatedAt": "2026-03-30T00:00:00.000Z",
+    "bodyExcerpt": "Frontend tooling: the current message only prints the id. Include the importer and a hint.",
+    "author": "demo-user"
+  },
+  {
+    "id": 900018,
+    "number": 1306,
+    "title": "Editor: screen reader does not announce folded region state",
+    "url": "https://github.com/microsoft/vscode/contribute",
+    "repo": {
+      "fullName": "microsoft/vscode",
+      "owner": "microsoft",
+      "avatarUrl": "https://github.com/microsoft.png?size=64",
+      "url": "https://github.com/microsoft/vscode",
+      "stars": 168000,
+      "language": "TypeScript"
+    },
+    "labels": [
+      {
+        "name": "accessibility",
+        "color": "c5def5"
+      },
+      {
+        "name": "help wanted",
+        "color": "008672"
+      }
+    ],
+    "comments": 9,
+    "createdAt": "2026-03-17T18:00:00.000Z",
+    "updatedAt": "2026-03-21T18:00:00.000Z",
+    "bodyExcerpt": "Accessibility: when a region is folded or unfolded, screen readers get no feedback in the editor.",
+    "author": "demo-user"
+  },
+  {
+    "id": 900019,
+    "number": 1323,
+    "title": "`deno fmt` should respect `.editorconfig` indent_size",
+    "url": "https://github.com/denoland/deno/contribute",
+    "repo": {
+      "fullName": "denoland/deno",
+      "owner": "denoland",
+      "avatarUrl": "https://github.com/denoland.png?size=64",
+      "url": "https://github.com/denoland/deno",
+      "stars": 99000,
+      "language": "Rust"
+    },
+    "labels": [
+      {
+        "name": "enhancement",
+        "color": "a2eeef"
+      },
+      {
+        "name": "good first issue",
+        "color": "7057ff"
+      }
+    ],
+    "comments": 6,
+    "createdAt": "2026-03-08T12:00:00.000Z",
+    "updatedAt": "2026-03-13T12:00:00.000Z",
+    "bodyExcerpt": "CLI formatter ignores editorconfig. Add support for indent_size and indent_style.",
+    "author": "demo-user"
+  },
+  {
+    "id": 900020,
+    "number": 1340,
+    "title": "Add example showing gamepad rumble in the game examples",
+    "url": "https://github.com/bevyengine/bevy/contribute",
+    "repo": {
+      "fullName": "bevyengine/bevy",
+      "owner": "bevyengine",
+      "avatarUrl": "https://github.com/bevyengine.png?size=64",
+      "url": "https://github.com/bevyengine/bevy",
+      "stars": 38000,
+      "language": "Rust"
+    },
+    "labels": [
+      {
+        "name": "good first issue",
+        "color": "7057ff"
+      },
+      {
+        "name": "documentation",
+        "color": "0075ca"
+      }
+    ],
+    "comments": 3,
+    "createdAt": "2026-02-27T06:00:00.000Z",
+    "updatedAt": "2026-02-28T06:00:00.000Z",
+    "bodyExcerpt": "Game engine examples lack a gamepad rumble demonstration. Add a small example.",
+    "author": "demo-user"
+  },
+  {
+    "id": 900021,
+    "number": 1357,
+    "title": "Editor: tooltip for Theme overrides shows wrong default value",
+    "url": "https://github.com/godotengine/godot/contribute",
+    "repo": {
+      "fullName": "godotengine/godot",
+      "owner": "godotengine",
+      "avatarUrl": "https://github.com/godotengine.png?size=64",
+      "url": "https://github.com/godotengine/godot",
+      "stars": 93000,
+      "language": "C++"
+    },
+    "labels": [
+      {
+        "name": "bug",
+        "color": "d73a4a"
+      },
+      {
+        "name": "good first issue",
+        "color": "7057ff"
+      }
+    ],
+    "comments": 4,
+    "createdAt": "2026-02-18T00:00:00.000Z",
+    "updatedAt": "2026-02-20T00:00:00.000Z",
+    "bodyExcerpt": "Game engine editor shows the wrong default in the tooltip for some theme constants.",
+    "author": "demo-user"
+  },
+  {
+    "id": 900022,
+    "number": 1374,
+    "title": "[clang-tidy] false positive in `readability-redundant-casting` with templates",
+    "url": "https://github.com/llvm/llvm-project/contribute",
+    "repo": {
+      "fullName": "llvm/llvm-project",
+      "owner": "llvm",
+      "avatarUrl": "https://github.com/llvm.png?size=64",
+      "url": "https://github.com/llvm/llvm-project",
+      "stars": 30000,
+      "language": "C++"
+    },
+    "labels": [
+      {
+        "name": "bug",
+        "color": "d73a4a"
+      },
+      {
+        "name": "help wanted",
+        "color": "008672"
+      }
+    ],
+    "comments": 3,
+    "createdAt": "2026-02-08T18:00:00.000Z",
+    "updatedAt": "2026-02-11T18:00:00.000Z",
+    "bodyExcerpt": "Compiler tooling: the check fires on casts inside dependent template contexts.",
+    "author": "demo-user"
+  },
+  {
+    "id": 900023,
+    "number": 1391,
+    "title": "Add test coverage for `list_reduce` with NULL accumulators",
+    "url": "https://github.com/duckdb/duckdb/contribute",
+    "repo": {
+      "fullName": "duckdb/duckdb",
+      "owner": "duckdb",
+      "avatarUrl": "https://github.com/duckdb.png?size=64",
+      "url": "https://github.com/duckdb/duckdb",
+      "stars": 27000,
+      "language": "C++"
+    },
+    "labels": [
+      {
+        "name": "testing",
+        "color": "fbca04"
+      },
+      {
+        "name": "good first issue",
+        "color": "7057ff"
+      }
+    ],
+    "comments": 2,
+    "createdAt": "2026-01-30T12:00:00.000Z",
+    "updatedAt": "2026-02-03T12:00:00.000Z",
+    "bodyExcerpt": "Database function list_reduce lacks tests for NULL initial values.",
+    "author": "demo-user"
+  },
+  {
+    "id": 900024,
+    "number": 1408,
+    "title": "cmd/geth: document `--history.transactions` flag in CLI help",
+    "url": "https://github.com/ethereum/go-ethereum/contribute",
+    "repo": {
+      "fullName": "ethereum/go-ethereum",
+      "owner": "ethereum",
+      "avatarUrl": "https://github.com/ethereum.png?size=64",
+      "url": "https://github.com/ethereum/go-ethereum",
+      "stars": 48000,
+      "language": "Go"
+    },
+    "labels": [
+      {
+        "name": "documentation",
+        "color": "0075ca"
+      },
+      {
+        "name": "good first issue",
+        "color": "7057ff"
+      }
+    ],
+    "comments": 1,
+    "createdAt": "2026-01-21T06:00:00.000Z",
+    "updatedAt": "2026-01-26T06:00:00.000Z",
+    "bodyExcerpt": "Blockchain client CLI flag lacks documentation.",
+    "author": "demo-user"
+  },
+  {
+    "id": 900025,
+    "number": 1425,
+    "title": "Add NatSpec to ERC4626 internal helpers",
+    "url": "https://github.com/OpenZeppelin/openzeppelin-contracts/contribute",
+    "repo": {
+      "fullName": "OpenZeppelin/openzeppelin-contracts",
+      "owner": "OpenZeppelin",
+      "avatarUrl": "https://github.com/OpenZeppelin.png?size=64",
+      "url": "https://github.com/OpenZeppelin/openzeppelin-contracts",
+      "stars": 25000,
+      "language": "Solidity"
+    },
+    "labels": [
+      {
+        "name": "documentation",
+        "color": "0075ca"
+      },
+      {
+        "name": "good first issue",
+        "color": "7057ff"
+      }
+    ],
+    "comments": 2,
+    "createdAt": "2026-01-12T00:00:00.000Z",
+    "updatedAt": "2026-01-13T00:00:00.000Z",
+    "bodyExcerpt": "Smart contract library: internal helpers are missing NatSpec comments.",
+    "author": "demo-user"
+  },
+  {
+    "id": 900026,
+    "number": 1442,
+    "title": "Semantics label missing on `SearchAnchor` clear button",
+    "url": "https://github.com/flutter/flutter/contribute",
+    "repo": {
+      "fullName": "flutter/flutter",
+      "owner": "flutter",
+      "avatarUrl": "https://github.com/flutter.png?size=64",
+      "url": "https://github.com/flutter/flutter",
+      "stars": 168000,
+      "language": "Dart"
+    },
+    "labels": [
+      {
+        "name": "accessibility",
+        "color": "c5def5"
+      },
+      {
+        "name": "good first issue",
+        "color": "7057ff"
+      }
+    ],
+    "comments": 3,
+    "createdAt": "2026-01-02T18:00:00.000Z",
+    "updatedAt": "2026-01-04T18:00:00.000Z",
+    "bodyExcerpt": "Mobile accessibility: the clear button has no semantics label, so TalkBack/VoiceOver read nothing.",
+    "author": "demo-user"
+  },
+  {
+    "id": 900027,
+    "number": 1459,
+    "title": "Add test for HTTP/2 connection coalescing with IP addresses",
+    "url": "https://github.com/square/okhttp/contribute",
+    "repo": {
+      "fullName": "square/okhttp",
+      "owner": "square",
+      "avatarUrl": "https://github.com/square.png?size=64",
+      "url": "https://github.com/square/okhttp",
+      "stars": 46000,
+      "language": "Kotlin"
+    },
+    "labels": [
+      {
+        "name": "testing",
+        "color": "fbca04"
+      },
+      {
+        "name": "help wanted",
+        "color": "008672"
+      }
+    ],
+    "comments": 2,
+    "createdAt": "2025-12-24T12:00:00.000Z",
+    "updatedAt": "2025-12-27T12:00:00.000Z",
+    "bodyExcerpt": "Networking: coalescing logic is untested when the host is a literal IP.",
+    "author": "demo-user"
+  },
+  {
+    "id": 900028,
+    "number": 1476,
+    "title": "drivers: sensor: add missing Kconfig help text for bme280",
+    "url": "https://github.com/zephyrproject-rtos/zephyr/contribute",
+    "repo": {
+      "fullName": "zephyrproject-rtos/zephyr",
+      "owner": "zephyrproject-rtos",
+      "avatarUrl": "https://github.com/zephyrproject-rtos.png?size=64",
+      "url": "https://github.com/zephyrproject-rtos/zephyr",
+      "stars": 12000,
+      "language": "C"
+    },
+    "labels": [
+      {
+        "name": "good first issue",
+        "color": "7057ff"
+      },
+      {
+        "name": "documentation",
+        "color": "0075ca"
+      }
+    ],
+    "comments": 1,
+    "createdAt": "2025-12-15T06:00:00.000Z",
+    "updatedAt": "2025-12-19T06:00:00.000Z",
+    "bodyExcerpt": "Embedded sensor driver Kconfig options lack help text.",
+    "author": "demo-user"
+  },
+  {
+    "id": 900029,
+    "number": 1493,
+    "title": "Template validation should flag duplicate matcher names",
+    "url": "https://github.com/projectdiscovery/nuclei/contribute",
+    "repo": {
+      "fullName": "projectdiscovery/nuclei",
+      "owner": "projectdiscovery",
+      "avatarUrl": "https://github.com/projectdiscovery.png?size=64",
+      "url": "https://github.com/projectdiscovery/nuclei",
+      "stars": 23000,
+      "language": "Go"
+    },
+    "labels": [
+      {
+        "name": "enhancement",
+        "color": "a2eeef"
+      },
+      {
+        "name": "good first issue",
+        "color": "7057ff"
+      }
+    ],
+    "comments": 3,
+    "createdAt": "2025-12-06T00:00:00.000Z",
+    "updatedAt": "2025-12-11T00:00:00.000Z",
+    "bodyExcerpt": "Security scanner: duplicate matcher names silently override each other.",
+    "author": "demo-user"
+  },
+  {
+    "id": 900030,
+    "number": 1510,
+    "title": "Assist: convert `match` with single arm to `if let`",
+    "url": "https://github.com/rust-lang/rust-analyzer/contribute",
+    "repo": {
+      "fullName": "rust-lang/rust-analyzer",
+      "owner": "rust-lang",
+      "avatarUrl": "https://github.com/rust-lang.png?size=64",
+      "url": "https://github.com/rust-lang/rust-analyzer",
+      "stars": 15000,
+      "language": "Rust"
+    },
+    "labels": [
+      {
+        "name": "good first issue",
+        "color": "7057ff"
+      },
+      {
+        "name": "enhancement",
+        "color": "a2eeef"
+      }
+    ],
+    "comments": 5,
+    "createdAt": "2025-11-26T18:00:00.000Z",
+    "updatedAt": "2025-11-27T18:00:00.000Z",
+    "bodyExcerpt": "Compiler / language server assist request. Should preserve comments.",
+    "author": "demo-user"
+  },
+  {
+    "id": 900031,
+    "number": 1527,
+    "title": "Add test for `JsonSerializer` handling of `init`-only properties with records",
+    "url": "https://github.com/dotnet/runtime/contribute",
+    "repo": {
+      "fullName": "dotnet/runtime",
+      "owner": "dotnet",
+      "avatarUrl": "https://github.com/dotnet.png?size=64",
+      "url": "https://github.com/dotnet/runtime",
+      "stars": 16000,
+      "language": "C#"
+    },
+    "labels": [
+      {
+        "name": "testing",
+        "color": "fbca04"
+      },
+      {
+        "name": "help wanted",
+        "color": "008672"
+      }
+    ],
+    "comments": 3,
+    "createdAt": "2025-11-17T12:00:00.000Z",
+    "updatedAt": "2025-11-19T12:00:00.000Z",
+    "bodyExcerpt": "Serialization tests are missing for record types with init-only properties.",
+    "author": "demo-user"
+  }
+]
