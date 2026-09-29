@@ -1,4 +1,5 @@
 import { motion, useMotionValue, useReducedMotion, useSpring, useTransform, type MotionValue } from 'framer-motion';
+import { useEntrance } from '../hooks/useEntrance';
 import { ChevronDown } from 'lucide-react';
 import { forwardRef, useId, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
@@ -25,6 +26,7 @@ interface Props {
 
 /** Hand-sewn running stitch under a phrase; draws itself left to right. */
 function StitchUnderline() {
+  const enter = useEntrance();
   return (
     <svg
       viewBox="0 0 300 18"
@@ -39,7 +41,7 @@ function StitchUnderline() {
             y="-10"
             width="300"
             height="40"
-            initial={{ scaleX: 0 }}
+            initial={enter({ scaleX: 0 })}
             animate={{ scaleX: 1 }}
             transition={{ duration: 1.1, delay: 0.35, ease: [0.6, 0.05, 0.3, 1] }}
             style={{ originX: 0 }}
@@ -105,6 +107,7 @@ function CollagePatch({
   my: MotionValue<number>;
   index: number;
 }) {
+  const enter = useEntrance();
   const x = useTransform(mx, (v) => v * p.depth);
   const y = useTransform(my, (v) => v * p.depth);
   const you = p.id === '__you';
@@ -112,7 +115,7 @@ function CollagePatch({
   return (
     <motion.div style={{ gridColumn: p.col, gridRow: p.row, x, y }} className="relative">
       <motion.div
-        initial={{ scale: 0.6, rotate: p.r * 4 }}
+        initial={enter({ scale: 0.6, rotate: p.r * 4 })}
         animate={{ scale: 1, rotate: 0 }}
         transition={{ type: 'spring', stiffness: 220, damping: 16, delay: 0.25 + index * 0.07 }}
         className="h-full w-full"
@@ -179,6 +182,7 @@ function QuiltCollage({ mx, my }: { mx: MotionValue<number>; my: MotionValue<num
 
 /** A thin band of fabric for small screens, where the collage would crowd the search. */
 function SelvageBand() {
+  const enter = useEntrance();
   const ids = [
     'databases',
     'ml',
@@ -195,7 +199,7 @@ function SelvageBand() {
       {ids.map((id, i) => (
         <motion.span
           key={id}
-          initial={{ scaleY: 0.2 }}
+          initial={enter({ scaleY: 0.2 })}
           animate={{ scaleY: 1 }}
           transition={{ type: 'spring', stiffness: 300, damping: 18, delay: 0.1 + i * 0.04 }}
           className="h-3 flex-1 origin-bottom rounded-[3px] ring-1 ring-black/10"
@@ -316,6 +320,7 @@ export function DomainQuilt({
   sub = 'Start from a field you care about. We understand 22 of them, in plain words.',
   compact,
 }: QuiltProps) {
+  const enter = useEntrance();
   const wide = useMediaQuery('(min-width: 640px)');
   const [showAll, setShowAll] = useState(false);
   const listId = useId();
@@ -341,7 +346,7 @@ export function DomainQuilt({
           return (
             <motion.li
               key={f.id}
-              initial={{ y: 18, rotate: i % 2 ? 1 : -1 }}
+              initial={enter({ y: 18, rotate: i % 2 ? 1 : -1 })}
               whileInView={{ y: 0, rotate: 0 }}
               viewport={{ once: true, margin: '-40px' }}
               transition={{ type: 'spring', stiffness: 260, damping: 22, delay: (i % 4) * 0.05 }}

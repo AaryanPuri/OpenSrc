@@ -1,0 +1,18 @@
+name: Feature request
+description: Suggest an idea or an improvement for OpenSrc.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What would you like to do?
+      description: The problem or the situation, in a sentence or two.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Your idea
+      description: How you imagine it working. Sketches and links to similar tools are welcome.
+    validations:
+      required: false

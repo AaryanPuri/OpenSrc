@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { useEntrance } from '../hooks/useEntrance';
 import { ArrowDown } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { RepoRecord } from '../../../shared/repo';
@@ -51,6 +52,7 @@ export function RepoGrid({
   resetKey,
   offline,
 }: Props) {
+  const enter = useEntrance();
   const { isRepoSaved, onToggleRepoSave } = useShell();
   const [shown, setShown] = useState(GRID_PAGE);
   useEffect(() => setShown(GRID_PAGE), [resetKey]);
@@ -91,7 +93,7 @@ export function RepoGrid({
         {visible.map((repo, i) => (
           <motion.li
             key={repo.fullName}
-            initial={{ y: 26, rotate: i % 2 ? 0.5 : -0.5 }}
+            initial={enter({ y: 26, rotate: i % 2 ? 0.5 : -0.5 })}
             animate={{ y: 0, rotate: 0 }}
             transition={{ type: 'spring', stiffness: 380, damping: 32, delay: Math.min(i % GRID_PAGE, 8) * 0.045 }}
           >

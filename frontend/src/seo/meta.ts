@@ -177,11 +177,12 @@ export function collectionMeta(site: string, c: Collection, first: RepoRecord[],
 
 export function submitMeta(site: string): PageMeta {
   return pageMeta(site, {
-    title: `Submit a repo${SUFFIX}`,
-    description: 'Suggest an open-source repo for the OpenSrc directory, or flag one that no longer fits.',
+    title: `Submit a repo to the directory${SUFFIX}`,
+    description:
+      'Suggest an open-source repo for OpenSrc: check it against the listing rules and its contributor-friendliness ' +
+      'score, then file it on GitHub. Or flag a listed repo that no longer fits.',
     path: '/submit',
-    // A placeholder until the submit flow lands.
-    noindex: true,
+    jsonLd: [breadcrumbs(site, [{ name: 'Submit a repo', path: '/submit' }])],
   });
 }
 

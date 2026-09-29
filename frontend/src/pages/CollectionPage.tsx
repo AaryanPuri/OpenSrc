@@ -1,31 +1,52 @@
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Sparkles } from 'lucide-react';
 import { useMemo } from 'react';
-import { Link, useParams } from 'react-router';
-import { COLLECTIONS, collectionById, collectionContext, selectCollection } from '../../../shared/collections';
+import { Link, useParams, useSearchParams } from 'react-router';
+import {
+  COLLECTIONS,
+  FRESH_DAYS,
+  collectionById,
+  collectionContext,
+  selectCollection,
+  type Collection,
+} from '../../../shared/collections';
+import { sortRepos } from '../../../shared/repoFilter';
 import { CollectionBlockArt, CollectionQuilt } from '../components/CollectionQuilt';
 import { RepoGrid } from '../components/RepoGrid';
 import { useDataset } from '../data/dataset';
 import { useDocumentMeta } from '../hooks/useDocumentMeta';
 import { LIST_PAGE } from '../lib/listPages';
+import { REPO_SORT_LABELS, REPO_SORTS, type RepoSort } from '../lib/repoSearch';
 import { useSiteUrl } from '../seo/context';
 import { collectionMeta, collectionsMeta } from '../seo/meta';
 import { NotFoundPage } from './NotFoundPage';
 
-/** One collection's repos. (A richer page, with its own filters, comes later.) */
+/** One collection: an intro, how many repos it holds, a sort, and the grid. `?sort=` overrides its own order. */
 export function CollectionPage() {
   const { id = '' } = useParams();
   const c = collectionById(id);
   const { status, repos, meta, now, retry, partial } = useDataset();
   const site = useSiteUrl();
-  const list = useMemo(() => (c && meta ? selectCollection(c, repos, collectionContext(meta)) : []), [c, repos, meta]);
+  const [params, setParams] = useSearchParams();
+  const asked = params.get('sort') as RepoSort | null;
+  const sort: RepoSort = asked && REPO_SORTS.includes(asked) ? asked : (c?.sort ?? 'score');
+  const own = useMemo(() => (c && meta ? selectCollection(c, repos, collectionContext(meta)) : []), [c, repos, meta]);
+  const list = useMemo(() => (c && sort !== c.sort ? sortRepos(own, sort) : own), [c, own, sort]);
   const total = partial?.total ?? list.length;
   const pageMeta = useMemo(
-    () => (c && status === 'ready' ? collectionMeta(site, c, list.slice(0, LIST_PAGE), total) : null),
-    [c, status, site, list, total],
+    () => (c && status === 'ready' ? collectionMeta(site, c, own.slice(0, LIST_PAGE), total) : null),
+    [c, status, site, own, total],
   );
   useDocumentMeta(pageMeta);
 
   if (!c) return <NotFoundPage />;
+
+  const ready = status === 'ready';
+  const setSort = (s: RepoSort) => {
+    const next = new URLSearchParams(params);
+    if (s === c.sort) next.delete('sort');
+    else next.set('sort', s);
+    setParams(next, { replace: true, preventScrollReset: true });
+  };
 
   return (
     <div className="mx-auto max-w-6xl px-4 pb-24 pt-5 sm:px-6 sm:pt-8">
@@ -45,30 +66,99 @@ export function CollectionPage() {
           </h1>
         </div>
       </header>
-      <p className="mt-4 max-w-2xl text-pretty text-muted">{c.description}</p>
-      <h2 className="mt-8 font-display text-[22px] font-[560] tracking-[-0.01em]" aria-live="polite">
-        {status === 'ready' ? (
-          <>
-            <span className="tabular-nums">{total.toLocaleString('en')}</span> {total === 1 ? 'repo' : 'repos'}
-          </>
-        ) : (
-          'Repos'
+      <p className="mt-4 max-w-2xl text-pretty text-muted" data-testid="collection-intro">
+        {c.description}
+      </p>
+
+      <div className="mt-8 flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+        <h2 className="font-display text-[22px] font-[560] tracking-[-0.01em]" aria-live="polite">
+          {ready ? (
+            <>
+              <span className="tabular-nums">{total.toLocaleString('en')}</span> {total === 1 ? 'repo' : 'repos'}
+            </>
+          ) : (
+            'Repos'
+          )}
+          <span className="sr-only"> by {REPO_SORT_LABELS[sort].label.toLowerCase()}</span>
+        </h2>
+        {(!ready || total > 1) && (
+          <div
+            role="radiogroup"
+            aria-label="Sort repos"
+            className="flex max-w-full gap-0.5 overflow-x-auto rounded-full bg-fg/[0.06] p-0.5 scrollbar-none"
+            data-testid="collection-sort"
+          >
+            {REPO_SORTS.map((s) => {
+              const active = s === sort;
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  title={REPO_SORT_LABELS[s].hint}
+                  onClick={() => setSort(s)}
+                  className={`h-11 shrink-0 whitespace-nowrap rounded-full px-3 text-[13px] font-medium transition-colors sm:h-8 ${active ? 'bg-fg text-bg' : 'text-muted hover:text-fg'}`}
+                >
+                  {REPO_SORT_LABELS[s].label}
+                </button>
+              );
+            })}
+          </div>
         )}
-      </h2>
+      </div>
       <div className="mt-4">
-        <RepoGrid
-          repos={list}
-          total={total}
-          status={status}
-          now={now}
-          onRetry={retry}
-          resetKey={c.id}
-          emptyAction={
-            <Link to="/" className="btn-seam">
-              Browse the whole directory
-            </Link>
-          }
-        />
+        {ready && total === 0 ? (
+          <EmptyCollection c={c} />
+        ) : (
+          <RepoGrid
+            repos={list}
+            total={total}
+            status={status}
+            now={now}
+            onRetry={retry}
+            resetKey={`${c.id}:${sort}`}
+            emptyAction={
+              <Link to="/" className="btn-seam">
+                Browse the whole directory
+              </Link>
+            }
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** A collection with nothing in it yet (Fresh this week, right after the first build). */
+function EmptyCollection({ c }: { c: Collection }) {
+  const fresh = c.id === 'fresh';
+  return (
+    <div
+      className="flex flex-col items-center rounded-[16px] border border-dashed border-line-strong px-6 py-12 text-center"
+      data-testid="collection-empty"
+    >
+      <span
+        aria-hidden="true"
+        className="grid h-14 w-14 -rotate-6 place-items-center rounded-[14px] border border-accent/50 bg-accent/[0.07] text-accent"
+      >
+        <Sparkles className="h-6 w-6" />
+      </span>
+      <h3 className="mt-5 font-display text-[22px] font-[560] tracking-[-0.01em]">
+        {fresh ? 'Nothing new on the bolt yet' : 'Nothing in this collection right now'}
+      </h3>
+      <p className="mt-2 max-w-md text-pretty text-sm text-muted">
+        {fresh
+          ? `This collection shows repos that joined the directory in the last ${FRESH_DAYS} days. The directory was just built, so everything in it counts as a founding patch. It fills up as the nightly collector finds new repos, starting with the next runs.`
+          : 'The collector refreshes the directory every night, so check back soon.'}
+      </p>
+      <div className="mt-6 flex flex-wrap justify-center gap-2">
+        <Link to="/collections/first-pr" className="btn-ink h-11 px-5">
+          Best for a first PR <ArrowRight className="h-4 w-4" aria-hidden="true" />
+        </Link>
+        <Link to="/" className="btn-seam h-11 px-5">
+          Browse the whole directory
+        </Link>
       </div>
     </div>
   );

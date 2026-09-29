@@ -46,7 +46,7 @@ export default defineConfig(
     rules: { 'react-refresh/only-export-components': 'off' },
   },
   {
-    files: ['frontend/scripts/**/*.ts', 'frontend/test/**/*.{ts,tsx}'],
+    files: ['frontend/scripts/**/*.{ts,mjs}', 'frontend/test/**/*.{ts,tsx}'],
     languageOptions: { globals: { ...globals.node, ...globals.browser } },
   },
 

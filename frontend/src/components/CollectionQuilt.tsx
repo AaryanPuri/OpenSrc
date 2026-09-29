@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { useEntrance } from '../hooks/useEntrance';
 import { Link } from 'react-router';
 import { COLLECTIONS, type Collection } from '../../../shared/collections';
 import type { DatasetMeta, RepoRecord } from '../../../shared/repo';
@@ -47,6 +48,7 @@ export function CollectionQuilt({
   headingId = 'collections-title',
   detailed = false,
 }: Props) {
+  const enter = useEntrance();
   const computed = useCollectionCounts(repos, meta);
   const counts = known ?? computed;
   return (
@@ -71,7 +73,7 @@ export function CollectionQuilt({
             <motion.li
               key={c.id}
               className={i === 0 ? 'col-span-2 sm:col-span-1' : ''}
-              initial={{ y: 18, rotate: i % 2 ? 1 : -1 }}
+              initial={enter({ y: 18, rotate: i % 2 ? 1 : -1 })}
               whileInView={{ y: 0, rotate: 0 }}
               viewport={{ once: true, margin: '-40px' }}
               transition={{ type: 'spring', stiffness: 260, damping: 22, delay: i * 0.05 }}

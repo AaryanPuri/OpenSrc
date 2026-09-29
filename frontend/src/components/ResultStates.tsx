@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { useEntrance } from '../hooks/useEntrance';
 import { FlaskConical, KeyRound, RotateCcw, Scissors, TriangleAlert, WifiOff, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { Chip } from '../lib/parseQuery';
@@ -76,6 +77,7 @@ export function Notice({
   onRetry: () => void;
   onDismiss: () => void;
 }) {
+  const enter = useEntrance();
   const countdown = useCountdown(notice?.resetAt);
   if (!notice) return null;
   const Icon = notice.kind === 'rate-limit' ? TriangleAlert : notice.kind === 'network' ? WifiOff : FlaskConical;
@@ -88,7 +90,7 @@ export function Notice({
 
   return (
     <motion.div
-      initial={{ y: -4 }}
+      initial={enter({ y: -4 })}
       animate={{ y: 0 }}
       role="status"
       className="flex items-center gap-2.5 rounded-[12px] border border-warn/40 bg-warn/[0.08] py-1.5 pl-3 pr-1 text-[13px]"
@@ -147,6 +149,7 @@ export function EmptyState({
   body?: string;
   action?: React.ReactNode;
 }) {
+  const enter = useEntrance();
   const removable = chips.filter((c) => c.kind !== 'qualifier').slice(0, 4);
   return (
     <div
@@ -154,7 +157,7 @@ export function EmptyState({
       data-testid="empty-state"
     >
       <motion.span
-        initial={{ rotate: -20, scale: 0.6 }}
+        initial={enter({ rotate: -20, scale: 0.6 })}
         animate={{ rotate: -6, scale: 1 }}
         transition={{ type: 'spring', stiffness: 260, damping: 14 }}
         className="grid h-14 w-14 place-items-center rounded-[14px] border border-accent/50 bg-accent/[0.07] text-accent"

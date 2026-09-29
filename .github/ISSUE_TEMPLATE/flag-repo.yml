@@ -1,0 +1,37 @@
+name: Flag a repo
+description: Report a listed repo that no longer fits the directory, or whose details are wrong.
+title: 'Flag: owner/name'
+labels: [flag]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for keeping the directory honest. Every repo page on [opensrc.studio](https://opensrc.studio) has a **Flag this repo** link that fills this form in for you.
+  - type: input
+    id: repo
+    attributes:
+      label: Repository
+      description: '`owner/name` or its GitHub URL.'
+      placeholder: owner/name
+    validations:
+      required: true
+  - type: dropdown
+    id: reason
+    attributes:
+      label: What's wrong?
+      options:
+        - Archived or inactive
+        - Not welcoming or unresponsive
+        - Wrong field or language
+        - Not beginner-friendly
+        - Spam or not open source
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+      description: Links help, e.g. an issue nobody answered, or the right field or language.
+    validations:
+      required: false

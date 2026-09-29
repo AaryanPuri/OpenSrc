@@ -12,6 +12,9 @@ browser, React hydrates that HTML and takes over.
 2. `vite build`: the client bundle in `frontend/dist/`
 3. `vite build --ssr src/entry-server.tsx --outDir dist-ssr`: the server render (`render(url, { dataset })`)
 4. `tsx scripts/prerender.ts`: the pages, the data files, the sitemap, `robots.txt` and the feed
+5. `tsx scripts/compress.ts`: Brotli (`.br`) and gzip (`.gz`) copies of every HTML, JS, CSS, JSON, XML and SVG
+   file of 1 KB or more, for the Node server. Cloudflare Pages drops them again (`scripts/cf-pages.mjs`) and
+   compresses at the edge.
 
 It then compiles `backend/`. `npm start` does the same and starts the server.
 
@@ -38,7 +41,7 @@ In `frontend/dist/`:
 | `language/<id>/index.html`                              | One page per language with at least 3 repos.                                                      |
 | `field/<id>/index.html`                                 | One page per field with at least 1 repo.                                                          |
 | `collections/index.html`, `collections/<id>/index.html` | The collections.                                                                                  |
-| `submit/index.html`                                     | The submit page (`noindex` while it is a placeholder).                                            |
+| `submit/index.html`                                     | The submit page: the check-and-file form, flagging, and how listing works.                        |
 | `404.html`                                              | The not-found page.                                                                               |
 | `app.html`                                              | The empty app shell, for client-rendered routes (`/issues`, `/account`).                          |
 | `data/repos.<hash>.json`                                | The compact repo index, named by a hash of its content.                                           |
@@ -62,7 +65,7 @@ must not be indexed, and JSON-LD from `src/seo/jsonLd.ts`:
 On the server, the render collects the meta and the script puts it in place of `<!--head-->` in `index.html`.
 In the browser, the same hook updates the tags on client-side navigation.
 
-`noindex` pages: `/issues`, `/account`, `/submit`, directory searches (`/?q=`), empty collections and the 404
+`noindex` pages: `/issues`, `/account`, directory searches (`/?q=`), empty collections and the 404
 page.
 
 ## Hydration
@@ -79,6 +82,13 @@ sides.
 `src/boot.tsx` hydrates only when the address is the one the page was rendered for, without a query string.
 Otherwise (`/?q=rust`, `404.html` served at an unknown address) it renders from scratch.
 
+Entrance animations (cards sliding in, tiles settling) use `useEntrance()` (`src/hooks/useEntrance.ts`): on the
+server and during hydration framer-motion gets `initial={false}`, so the HTML, and visitors without JavaScript,
+see everything in its final place. Only elements that mount later animate in.
+
+A repo page's live issues (`src/components/RepoIssues.tsx`, with the issue cards and the GitHub search) load in
+their own chunk after hydration. The server renders placeholders there.
+
 ## Serving
 
 `backend/src/static.ts` serves `frontend/dist/` in production:
@@ -87,6 +97,9 @@ Otherwise (`/?q=rust`, `404.html` served at an unknown address) it renders from 
   dots like `/repo/mrdoob/three.js`.
 - Unknown `/repo/…`, `/language/…`, `/field/…` and `/collections/…` paths get `404.html` with status 404.
 - Other paths without an extension (`/issues`, `/account`) get the app shell (`app.html`) with status 200.
+- Precompressed files: when a file has a `.br` or `.gz` copy and `Accept-Encoding` allows it, that copy is
+  sent with `Content-Encoding` (Brotli first). The 404 page and the app shell are negotiated the same way
+  (q-values honoured). Compressible responses always carry `Vary: Accept-Encoding`.
 - Cache headers:
   - HTML: `public, max-age=300`
   - `/assets/*` and `/data/repos.<hash>.json`: `public, max-age=31536000, immutable`
@@ -111,4 +124,6 @@ Any static host with the same rules works too: nested `index.html`, `404.html` f
     - no `undefined`, `NaN` or `[object Object]` appears anywhere
   - `test/hydration.test.tsx` hydrates the pages in jsdom and expects no recoverable errors or hydration
     warnings.
-- `backend/test/static.test.ts`: nested pages, 404s, the app shell and cache headers.
+- `backend/test/static.test.ts`: nested pages, 404s, the app shell and cache headers;
+  `backend/test/static.compress.test.ts`: precompressed responses and `Accept-Encoding` negotiation.
+- `frontend/test/compress.test.ts` (in `test:prerender`): which files get `.br` / `.gz` copies.

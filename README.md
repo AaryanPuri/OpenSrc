@@ -118,10 +118,10 @@ A repo isn't listed if it is archived, a fork or a mirror; has no license; has h
 ## How repos get listed
 
 1. **Automatically, every night.** A [GitHub Action](.github/workflows/collect.yml) searches GitHub for active repos with good first issues in every supported language, scores them, and opens a pull request with the updated dataset. A maintainer reviews and merges it.
-2. **By suggestion.** Know a welcoming project we missed? Use **[Submit a repo](https://opensrc.studio/submit)**. It checks the repo against the same rules before you file it.
+2. **By suggestion.** Know a welcoming project we missed? Use **[Submit a repo](https://opensrc.studio/submit)**. It checks the repo against the same rules in your browser, then opens a prefilled [submission issue](https://github.com/AaryanPuri/OpenSrc/issues/new?template=submit-repo.yml). Accepted repos go into `data/curation.yml`.
 3. **By hand.** Force-include, exclude or re-categorise a repo by editing [`data/curation.yml`](data/curation.yml) in a pull request.
 
-Something wrong with a listing? Every repo page has a **Flag this repo** link.
+Something wrong with a listing? Every repo page has a **Flag this repo** link, or use the [flag form](https://github.com/AaryanPuri/OpenSrc/issues/new?template=flag-repo.yml) directly.
 
 ---
 

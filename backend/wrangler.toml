@@ -1,0 +1,21 @@
+# Cloudflare Worker for the OpenSrc API (/api/*). The site itself is on Cloudflare Pages;
+# this Worker answers only opensrc.studio/api/*. See docs/deploy.md.
+#
+# Deploy from backend/:   npx wrangler deploy
+# Secrets (once each):    npx wrangler secret put GITHUB_TOKEN
+#                         npx wrangler secret put ANTHROPIC_API_KEY   (optional)
+
+name = "opensrc-api"
+main = "src/app.ts"
+compatibility_date = "2025-09-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Also reachable at https://opensrc-api.<your-subdomain>.workers.dev for testing.
+workers_dev = true
+
+routes = [
+  { pattern = "opensrc.studio/api/*", zone_name = "opensrc.studio" },
+]
+
+[observability]
+enabled = true

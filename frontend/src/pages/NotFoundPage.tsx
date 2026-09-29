@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { useEntrance } from '../hooks/useEntrance';
 import { ArrowLeft } from 'lucide-react';
 import { useMemo, type ReactNode } from 'react';
 import { Link, useLocation } from 'react-router';
@@ -22,6 +23,7 @@ export function NotFoundPage({
   actions,
   documentTitle,
 }: Props) {
+  const enter = useEntrance();
   const site = useSiteUrl();
   const { pathname } = useLocation();
   useDocumentMeta(useMemo(() => notFoundMeta(site, pathname, documentTitle), [site, pathname, documentTitle]));
@@ -30,7 +32,7 @@ export function NotFoundPage({
     <div className="mx-auto flex max-w-xl flex-col items-center px-4 pb-24 pt-20 text-center sm:px-6 sm:pt-28">
       <motion.span
         aria-hidden="true"
-        initial={{ rotate: -20, scale: 0.6 }}
+        initial={enter({ rotate: -20, scale: 0.6 })}
         animate={{ rotate: -6, scale: 1 }}
         transition={{ type: 'spring', stiffness: 260, damping: 14 }}
         className="grid h-20 w-20 place-items-center rounded-[18px] border-2 border-dashed border-accent/60 bg-accent/[0.05] font-display text-2xl font-[560] text-accent"

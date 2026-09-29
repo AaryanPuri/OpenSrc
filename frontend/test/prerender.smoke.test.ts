@@ -154,8 +154,16 @@ describe('pre-rendered site', () => {
   });
 
   it('marks thin pages noindex and keeps them out of the sitemap', () => {
-    expect(robotsOf(read('submit/index.html'))).toContain('noindex');
     expect(robotsOf(read('404.html'))).toContain('noindex');
+    // An empty collection explains itself and stays out of the index.
+    for (const c of COLLECTIONS) {
+      const html = read(`collections/${c.id}/index.html`);
+      const empty = html.includes('data-testid="collection-empty"');
+      expect(robotsOf(html)?.includes('noindex') ?? false, c.id).toBe(empty);
+    }
+    // The submit page explains how listing works: real content, indexable.
+    expect(robotsOf(read('submit/index.html'))).toBeUndefined();
+    expect(read('submit/index.html')).toContain('How repos get listed');
     expect(robotsOf(read('index.html'))).toBeUndefined();
     expect(robotsOf(read(`repo/${repos[0].fullName}/index.html`))).toBeUndefined();
   });
@@ -167,7 +175,7 @@ describe('pre-rendered site', () => {
     expect(new Set(locs)).toEqual(new Set(indexable));
     expect(locs).toContain(`${SITE}/`);
     expect(locs).toContain(`${SITE}/repo/dexie/Dexie.js`);
-    expect(locs).not.toContain(`${SITE}/submit`);
+    expect(locs).toContain(`${SITE}/submit`);
     expect(sitemap).toContain(`<lastmod>${meta.generatedAt}</lastmod>`);
   });
 

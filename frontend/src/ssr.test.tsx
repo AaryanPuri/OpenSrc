@@ -92,8 +92,19 @@ describe('server rendering', () => {
     expect(html).toContain('data-testid="score-parts"');
     expect(html).toContain('Start here');
     expect(html).toContain(`repo=${encodeURIComponent(star.fullName)}`);
-    // Live issues are fetched in the browser only.
+    expect(html).toContain('template=flag-repo.yml');
+    // Live issues are fetched in the browser only, by a component loaded after hydration.
+    expect(html).toContain('data-testid="repo-issues-loading"');
+    expect(html).not.toContain('data-testid="issue-tab"');
     expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('renders cards and tiles in their final place (no entrance offset before hydration)', () => {
+    for (const path of ['/', '/collections', '/language/rust', '/nope']) {
+      const html = render(path);
+      // The entrance offsets used by cards, tiles, patches and badges.
+      expect(html, path).not.toMatch(/transform:\s*translate|scale[XY]?\(0(\.[236])?\)|rotate\(-20deg\)/);
+    }
   });
 
   it('matches repo names case-insensitively', () => {
@@ -126,7 +137,24 @@ describe('server rendering', () => {
     expect(text(render('/field/compilers'))).toContain('Compilers &amp; Languages open-source projects');
     expect(render('/collections')).toContain('data-testid="collection-block"');
     expect(render('/collections/first-pr')).toContain('Best for a first PR');
-    expect(render('/submit')).toContain('Submit a repo');
+    const submit = render('/submit');
+    expect(submit).toContain('Stitch in a repo');
+    expect(submit).toContain('Unpick a repo');
+    expect(text(submit)).toContain('How repos get listed');
+    expect(submit).toContain('data-testid="listing-rules"');
+    expect(submit).toContain('value="flag-repo.yml"');
+    for (const reason of ['Archived or inactive', 'Spam or not open source']) expect(submit).toContain(reason);
+  });
+
+  it('sorts a collection with ?sort= and explains an empty one', () => {
+    const byScore = render('/collections/first-pr');
+    expect(byScore).toContain('data-testid="collection-sort"');
+    expect(byScore).toContain('data-testid="collection-intro"');
+    // "Fresh this week" is empty right after the first build.
+    const fresh = render('/collections/fresh');
+    expect(fresh).toContain('data-testid="collection-empty"');
+    expect(fresh).toContain('href="/collections/first-pr"');
+    expect(renderPage('/collections/fresh', { dataset }).meta?.robots).toContain('noindex');
   });
 
   it('renders the 404 page for unknown paths', () => {
@@ -155,7 +183,7 @@ describe('server render entry', () => {
   });
 
   it('marks thin and search pages noindex', () => {
-    expect(renderPage('/submit', { dataset }).meta?.robots).toContain('noindex');
+    expect(renderPage('/submit', { dataset }).meta?.robots).toBeNull();
     expect(renderPage('/nope', { dataset }).meta?.robots).toContain('noindex');
     expect(renderPage('/?q=rust', { dataset }).meta?.robots).toContain('noindex');
     expect(renderPage('/', { dataset }).meta?.robots).toBeNull();

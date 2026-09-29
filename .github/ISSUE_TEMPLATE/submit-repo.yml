@@ -1,0 +1,54 @@
+name: Submit a repo
+description: Suggest an open-source project that welcomes new contributors.
+title: 'Submit: owner/name'
+labels: [submission]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a repo! The quickest way is the [Submit a repo](https://opensrc.studio/submit) page: it checks the repo against the listing rules first and fills this form in for you.
+
+        A maintainer reviews each suggestion. Accepted repos are added to [`data/curation.yml`](https://github.com/AaryanPuri/OpenSrc/blob/main/data/curation.yml) and show up after the next nightly run.
+  - type: input
+    id: repo
+    attributes:
+      label: Repository
+      description: '`owner/name` or its GitHub URL.'
+      placeholder: sharkdp/bat
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why is it welcoming to new contributors?
+      description: Good first issues, a helpful CONTRIBUTING guide, maintainers who reply, mentoring. Anything that helped you or others.
+      placeholder: The maintainers label beginner issues every week and review first PRs within a day.
+    validations:
+      required: false
+  - type: input
+    id: fields
+    attributes:
+      label: Fields and languages (optional)
+      description: What the project is about, in case the automatic guess gets it wrong.
+      placeholder: CLI, Rust
+    validations:
+      required: false
+  - type: dropdown
+    id: relation
+    attributes:
+      label: How do you know the repo?
+      options:
+        - I maintain it
+        - I've contributed to it
+        - I use it
+        - Other
+    validations:
+      required: false
+  - type: checkboxes
+    id: rules
+    attributes:
+      label: Listing rules
+      description: See [how repos are scored](https://github.com/AaryanPuri/OpenSrc#how-repos-are-scored) and what keeps a repo out.
+      options:
+        - label: The repo is public and has a license; it isn't archived, a fork or a mirror; it had a commit in the last 180 days; and it has at least 2 open good-first-issue or help-wanted issues.
+          required: true

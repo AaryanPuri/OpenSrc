@@ -64,6 +64,8 @@ export function repoRoot(from = path.dirname(fileURLToPath(import.meta.url))): s
  *  - other non-`/api` GETs without a file extension get the app shell (`app.html`,
  *    else `index.html`) for client-side routes like `/issues` and `/account`
  *  - missing files with an extension and unknown `/api/*` paths stay 404
+ *  - precompressed `.br` / `.gz` copies (frontend/scripts/compress.ts) are sent
+ *    when Accept-Encoding allows, with Content-Encoding and `Vary: Accept-Encoding`
  */
 export function mountStatic(app: Hono<{ Bindings: Env }>, root: string): string {
   const abs = path.resolve(root);
@@ -71,15 +73,18 @@ export function mountStatic(app: Hono<{ Bindings: Env }>, root: string): string 
   if (!existsSync(indexFile)) {
     throw new Error(`Static root ${abs} has no index.html. Build the frontend first (npm run build at the repo root).`);
   }
-  const read = (name: string) => {
+  const read = (name: string): FallbackPage | null => {
     const file = path.join(abs, name);
-    return existsSync(file) ? readFileSync(file, "utf8") : null;
+    if (!existsSync(file)) return null;
+    const variant = (ext: string) => (existsSync(file + ext) ? readFileSync(file + ext) : null);
+    return { html: readFileSync(file, "utf8"), br: variant(".br"), gzip: variant(".gz") };
   };
   // Pre-rendered builds write the empty shell to app.html (index.html is then the home page).
-  const shellHtml = read("app.html") ?? readFileSync(indexFile, "utf8");
-  const notFoundHtml = read("404.html");
+  const shell = read("app.html") ?? read("index.html")!;
+  const notFound = read("404.html");
 
-  const files = serveStatic({ root: abs });
+  // `precompressed`: a file's .br / .gz sibling (scripts/compress.ts) is sent when the client accepts it.
+  const files = serveStatic({ root: abs, precompressed: true });
 
   app.get("*", async (c, next) => {
     if (isApiPath(c.req.path)) return next();
@@ -87,22 +92,75 @@ export function mountStatic(app: Hono<{ Bindings: Env }>, root: string): string 
     // serveStatic returns the file Response (or calls next() when missing). Headers
     // set in its onFound hook land after the Response is built, so set them here.
     if (res instanceof Response && res.ok) {
-      const html = res.headers.get("Content-Type")?.startsWith("text/html");
+      const type = res.headers.get("Content-Type") ?? "";
+      const html = type.startsWith("text/html");
       res.headers.set("Cache-Control", isHashedPath(c.req.path) ? IMMUTABLE_CACHE : html ? HTML_CACHE : "no-cache");
+      // The same URL answers differently per Accept-Encoding, compressed or not: caches must know.
+      if (isCompressibleType(type) && !res.headers.get("Vary")?.includes("Accept-Encoding")) {
+        res.headers.append("Vary", "Accept-Encoding");
+      }
     }
     return res;
   });
   app.get("*", async (c, next) => {
     const p = c.req.path;
     if (isApiPath(p)) return next();
-    if (isDirectoryPath(p) && notFoundHtml !== null) {
-      c.header("Cache-Control", HTML_CACHE);
-      return c.html(notFoundHtml, 404);
-    }
+    if (isDirectoryPath(p) && notFound !== null) return sendPage(c.req.header("Accept-Encoding"), notFound, 404);
     // Repo pages can end in what looks like an extension (/repo/mrdoob/three.js).
     if (path.extname(p) && !isAppPath(p)) return next();
-    c.header("Cache-Control", HTML_CACHE);
-    return c.html(shellHtml);
+    return sendPage(c.req.header("Accept-Encoding"), shell, 200);
   });
   return abs;
+}
+
+interface FallbackPage {
+  html: string;
+  br: Buffer | null;
+  gzip: Buffer | null;
+}
+
+const isCompressibleType = (type: string) =>
+  /^(text\/|application\/(javascript|json|xml|manifest\+json)|image\/svg\+xml)/i.test(type);
+
+/**
+ * The best encoding we have that the client accepts: `br`, then `gzip`, else
+ * null (identity). Honours q-values, `q=0` included, and `*`.
+ */
+export function negotiateEncoding(
+  acceptEncoding: string | undefined,
+  available: readonly ("br" | "gzip")[] = ["br", "gzip"],
+): "br" | "gzip" | null {
+  if (!acceptEncoding) return null;
+  const q = new Map<string, number>();
+  for (const part of acceptEncoding.split(",")) {
+    const [name, ...params] = part.trim().toLowerCase().split(";");
+    if (!name) continue;
+    const qp = params.map((s) => s.trim()).find((s) => s.startsWith("q="));
+    const value = qp ? Number(qp.slice(2)) : 1;
+    q.set(name, Number.isFinite(value) ? value : 0);
+  }
+  const weight = (enc: string) => q.get(enc) ?? q.get("*") ?? 0;
+  let best: "br" | "gzip" | null = null;
+  for (const enc of available) {
+    if (weight(enc) > 0 && (best === null || weight(enc) > weight(best))) best = enc;
+  }
+  return best;
+}
+
+function sendPage(acceptEncoding: string | undefined, page: FallbackPage, status: number): Response {
+  const headers: Record<string, string> = {
+    "Content-Type": "text/html; charset=UTF-8",
+    "Cache-Control": HTML_CACHE,
+    Vary: "Accept-Encoding",
+  };
+  const available = (["br", "gzip"] as const).filter((e) => page[e] !== null);
+  const enc = negotiateEncoding(acceptEncoding, available);
+  if (enc) {
+    const body = page[enc]!;
+    return new Response(new Uint8Array(body), {
+      status,
+      headers: { ...headers, "Content-Encoding": enc, "Content-Length": String(body.length) },
+    });
+  }
+  return new Response(page.html, { status, headers });
 }

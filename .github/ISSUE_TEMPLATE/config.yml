@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Email the maintainers
+    url: mailto:hello@opensrc.studio
+    about: Questions, private reports, or a repo that asked to be removed.

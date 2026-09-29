@@ -1,4 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
+import { useEntrance } from '../hooks/useEntrance';
 import {
   CalendarClock,
   Gauge,
@@ -64,12 +65,13 @@ interface PatchProps {
 }
 
 export const Patch = forwardRef<HTMLLIElement, PatchProps>(function Patch({ chip, onRemove, removeRef, index }, ref) {
+  const enter = useEntrance();
   const r = tilt(`${chip.kind}:${chip.id}`);
   return (
     <motion.li
       ref={ref}
       layout
-      initial={{ scale: 0.3, rotate: -18, y: 10 }}
+      initial={enter({ scale: 0.3, rotate: -18, y: 10 })}
       animate={{
         scale: 1,
         rotate: r,
