@@ -46,6 +46,12 @@ describe("mountStatic", () => {
     expect(await res.text()).toContain("<title>SPA</title>");
   });
 
+  it("serves repo pages whose name looks like a file", async () => {
+    const res = await app.request("/repo/mrdoob/three.js");
+    expect(res.status).toBe(200);
+    expect(await res.text()).toContain("<title>SPA</title>");
+  });
+
   it("404s missing files that have an extension", async () => {
     expect((await app.request("/assets/missing.js")).status).toBe(404);
   });

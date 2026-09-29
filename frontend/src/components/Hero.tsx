@@ -1,6 +1,7 @@
 import { motion, useMotionValue, useReducedMotion, useSpring, useTransform, type MotionValue } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
-import { forwardRef, useId, useRef, useState } from 'react';
+import { forwardRef, useId, useRef, useState, type ReactNode } from 'react';
+import { Link } from 'react-router';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { DOMAINS } from '../lib/dictionary';
 import { ALL_FIELDS as TILES } from '../lib/examples';
@@ -16,6 +17,10 @@ interface Props {
   onSubmit: (v: string) => void;
   onEdit: (v: string) => void;
   loading: boolean;
+  /** `repos`: the directory's landing (its own headline, copy and search examples). */
+  mode?: 'issues' | 'repos';
+  /** Repos in the directory, for the copy. */
+  repoCount?: number;
 }
 
 /** Hand-sewn running stitch under a phrase; draws itself left to right. */
@@ -52,6 +57,18 @@ function StitchUnderline() {
         vectorEffect="non-scaling-stroke"
       />
     </svg>
+  );
+}
+
+/** The italic, underlined end of the headline. */
+function HeadlineStitch({ children }: { children: ReactNode }) {
+  return (
+    <span className="relative inline-block whitespace-nowrap">
+      <em className="font-[480] italic" style={{ fontVariationSettings: '"SOFT" 100, "WONK" 1' }}>
+        {children}
+      </em>
+      <StitchUnderline />
+    </span>
   );
 }
 
@@ -190,9 +207,10 @@ function SelvageBand() {
 }
 
 export const Hero = forwardRef<HTMLTextAreaElement, Props>(function Hero(
-  { value, onChange, onSubmit, onEdit, loading },
+  { value, onChange, onSubmit, onEdit, loading, mode = 'issues', repoCount },
   ref,
 ) {
+  const repos = mode === 'repos';
   const reduce = useReducedMotion();
   const section = useRef<HTMLElement>(null);
   const rawX = useMotionValue(0);
@@ -218,19 +236,33 @@ export const Hero = forwardRef<HTMLTextAreaElement, Props>(function Hero(
             className="mt-5 font-display text-[2.9rem] font-[560] leading-[0.95] tracking-[-0.035em] text-fg sm:text-[4.4rem] lg:text-[5rem]"
             style={{ fontVariationSettings: '"SOFT" 50, "WONK" 1' }}
           >
-            Stitch yourself
-            <br />
-            into{' '}
-            <span className="relative inline-block whitespace-nowrap">
-              <em className="font-[480] italic" style={{ fontVariationSettings: '"SOFT" 100, "WONK" 1' }}>
-                open source.
-              </em>
-              <StitchUnderline />
-            </span>
+            {repos ? (
+              <>
+                Find a repo
+                <br />
+                that wants <HeadlineStitch>your patch.</HeadlineStitch>
+              </>
+            ) : (
+              <>
+                Stitch yourself
+                <br />
+                into <HeadlineStitch>open source.</HeadlineStitch>
+              </>
+            )}
           </h1>
           <p className="mt-7 max-w-[34rem] text-pretty text-[16px] leading-relaxed text-muted sm:text-[17px]">
-            Say what you like: a language, a field, how much time you have. OpenSrc sews it into a precise GitHub search
-            for open issues <span className="text-fg">nobody has claimed yet</span>.
+            {repos ? (
+              <>
+                {repoCount ? `${repoCount.toLocaleString('en')} open-source projects` : 'Open-source projects'} with
+                open good first issues, scored on how <span className="text-fg">welcoming they are to a first PR</span>.
+                Say what you like: a language, a field, fast maintainers.
+              </>
+            ) : (
+              <>
+                Say what you like: a language, a field, how much time you have. OpenSrc sews it into a precise GitHub
+                search for open issues <span className="text-fg">nobody has claimed yet</span>.
+              </>
+            )}
           </p>
 
           <div className="mt-8">
@@ -242,6 +274,7 @@ export const Hero = forwardRef<HTMLTextAreaElement, Props>(function Hero(
               onEdit={onEdit}
               loading={loading}
               autoplay
+              mode={mode}
             />
           </div>
         </div>
@@ -255,15 +288,30 @@ export const Hero = forwardRef<HTMLTextAreaElement, Props>(function Hero(
 });
 
 interface QuiltProps {
-  onPick: (query: string) => void;
+  /** Tiles run a search… */
+  onPick?: (query: string) => void;
+  /** …or link to a page (the directory's field pages). */
+  hrefFor?: (fieldId: string) => string;
   title?: string;
   sub?: string;
   compact?: boolean;
 }
 
+const MotionLink = motion.create(Link);
+
+const tileProps = (i: number) => ({
+  whileHover: { y: -3, rotate: i % 2 ? 0.6 : -0.6 },
+  whileTap: { scale: 0.97 },
+  transition: { type: 'spring' as const, stiffness: 400, damping: 22 },
+  className:
+    'tile group relative flex h-full min-h-16 w-full items-center gap-3 rounded-[14px] border border-line bg-surface/50 p-2.5 text-left transition-[background-color,border-color,box-shadow] duration-200 hover:border-line-strong hover:bg-surface hover:shadow-lift sm:p-3.5',
+  'data-testid': 'domain-tile',
+});
+
 /** "Pick a patch": the domain tiles, laid out like a quilt. */
 export function DomainQuilt({
   onPick,
+  hrefFor,
   title = 'Pick a patch',
   sub = 'Start from a field you care about. We understand 22 of them, in plain words.',
   compact,
@@ -298,23 +346,27 @@ export function DomainQuilt({
               viewport={{ once: true, margin: '-40px' }}
               transition={{ type: 'spring', stiffness: 260, damping: 22, delay: (i % 4) * 0.05 }}
             >
-              <motion.button
-                type="button"
-                onClick={() => onPick(f.query)}
-                whileHover={{ y: -3, rotate: i % 2 ? 0.6 : -0.6 }}
-                whileTap={{ scale: 0.97 }}
-                transition={{ type: 'spring', stiffness: 400, damping: 22 }}
-                className="tile group relative flex h-full min-h-16 w-full items-center gap-3 rounded-[14px] border border-line bg-surface/50 p-2.5 text-left transition-[background-color,border-color,box-shadow] duration-200 hover:border-line-strong hover:bg-surface hover:shadow-lift sm:p-3.5"
-                data-testid="domain-tile"
-              >
-                <FieldBadge id={f.id} size="lg" hoverShift />
-                <span className="min-w-0">
-                  <span className="block font-display text-[16px] font-[560] leading-tight tracking-[-0.01em] text-fg sm:text-[17px]">
-                    {def.label}
+              {hrefFor ? (
+                <MotionLink to={hrefFor(f.id)} {...tileProps(i)}>
+                  <FieldBadge id={f.id} size="lg" hoverShift />
+                  <span className="min-w-0">
+                    <span className="block font-display text-[16px] font-[560] leading-tight tracking-[-0.01em] text-fg sm:text-[17px]">
+                      {def.label}
+                    </span>
+                    <span className="mt-0.5 block truncate text-xs leading-snug text-subtle">{f.hint}</span>
                   </span>
-                  <span className="mt-0.5 block truncate text-xs leading-snug text-subtle">{f.hint}</span>
-                </span>
-              </motion.button>
+                </MotionLink>
+              ) : (
+                <motion.button type="button" onClick={() => onPick?.(f.query)} {...tileProps(i)}>
+                  <FieldBadge id={f.id} size="lg" hoverShift />
+                  <span className="min-w-0">
+                    <span className="block font-display text-[16px] font-[560] leading-tight tracking-[-0.01em] text-fg sm:text-[17px]">
+                      {def.label}
+                    </span>
+                    <span className="mt-0.5 block truncate text-xs leading-snug text-subtle">{f.hint}</span>
+                  </span>
+                </motion.button>
+              )}
             </motion.li>
           );
         })}

@@ -51,16 +51,15 @@ function repoData(): Plugin {
         const files = loadData();
         const path = decodeURIComponent((req.url ?? '').split('?')[0]);
         const detail = /^\/repo\/(.+)\.json$/.exec(path);
-        const body =
-          !files
-            ? undefined
-            : path === '/repos.json'
-              ? files.index
-              : path === '/meta.json'
-                ? files.meta
-                : detail && files.repos.has(detail[1])
-                  ? JSON.stringify(files.repos.get(detail[1]))
-                  : undefined;
+        const body = !files
+          ? undefined
+          : path === '/repos.json'
+            ? files.index
+            : path === '/meta.json'
+              ? files.meta
+              : detail && files.repos.has(detail[1])
+                ? JSON.stringify(files.repos.get(detail[1]))
+                : undefined;
         if (body === undefined) return next();
         res.setHeader('Content-Type', 'application/json; charset=utf-8');
         res.setHeader('Cache-Control', 'no-cache');

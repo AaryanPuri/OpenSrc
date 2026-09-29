@@ -134,7 +134,19 @@ export function Notice({
 
 /* ---------------- Empty / error ---------------- */
 
-export function EmptyState({ chips, onRemove }: { chips: Chip[]; onRemove: (c: Chip) => void }) {
+export function EmptyState({
+  chips,
+  onRemove,
+  title = 'Nothing fits every patch yet',
+  body = 'Unclaimed issues in a narrow corner are rare. Unpick one patch and there will be more to choose from:',
+  action,
+}: {
+  chips: Chip[];
+  onRemove: (c: Chip) => void;
+  title?: string;
+  body?: string;
+  action?: React.ReactNode;
+}) {
   const removable = chips.filter((c) => c.kind !== 'qualifier').slice(0, 4);
   return (
     <div
@@ -149,10 +161,8 @@ export function EmptyState({ chips, onRemove }: { chips: Chip[]; onRemove: (c: C
       >
         <Scissors className="h-6 w-6" aria-hidden="true" />
       </motion.span>
-      <h2 className="mt-5 font-display text-2xl font-[560] tracking-[-0.01em]">Nothing fits every patch yet</h2>
-      <p className="mt-2 max-w-sm text-pretty text-sm text-muted">
-        Unclaimed issues in a narrow corner are rare. Unpick one patch and there will be more to choose from:
-      </p>
+      <h2 className="mt-5 font-display text-2xl font-[560] tracking-[-0.01em]">{title}</h2>
+      <p className="mt-2 max-w-sm text-pretty text-sm text-muted">{body}</p>
       {removable.length > 0 && (
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           {removable.map((c) => (
@@ -173,6 +183,7 @@ export function EmptyState({ chips, onRemove }: { chips: Chip[]; onRemove: (c: C
           ))}
         </div>
       )}
+      {action && <div className="mt-4">{action}</div>}
     </div>
   );
 }

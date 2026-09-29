@@ -192,3 +192,10 @@ export function dateSignals(issue: Pick<Issue, 'createdAt' | 'updatedAt'>, now =
     stale: now - updated > 182 * 86_400_000,
   };
 }
+
+/** A typical reply time, rounded the way people say it: "~40m", "~5h", "~2d". */
+export function replyTime(hours: number): string {
+  if (hours < 1) return `~${Math.max(1, Math.round(hours * 60))}m`;
+  if (hours < 36) return `~${Math.round(hours)}h`;
+  return `~${Math.round(hours / 24)}d`;
+}

@@ -95,7 +95,8 @@ describe('repo search', () => {
   });
 
   it('every example query reads fully (no leftover keywords that could dead-end the grid)', () => {
-    for (const ex of REPO_EXAMPLE_QUERIES) expect([ex, readRepoQuery(parseQuery(ex)).filter.keywords]).toEqual([ex, []]);
+    for (const ex of REPO_EXAMPLE_QUERIES)
+      expect([ex, readRepoQuery(parseQuery(ex)).filter.keywords]).toEqual([ex, []]);
   });
 
   it('an empty query lists everything by score', () => {

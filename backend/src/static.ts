@@ -11,6 +11,8 @@ import type { Hono } from "hono";
 import type { Env } from "./types.js";
 
 const isApiPath = (p: string) => p === "/api" || p.startsWith("/api/");
+/** Client-side routes whose last segment is a name that may contain dots. */
+const isAppPath = (p: string) => /^\/repo\/[^/]+\/[^/]+\/?$/.test(p);
 
 /**
  * Where to serve the built frontend from, if anywhere:
@@ -43,7 +45,8 @@ export function repoRoot(from = path.dirname(fileURLToPath(import.meta.url))): s
 /**
  * Mount static file serving on `app` (after the API routes, so those win).
  *  - existing files are served; hashed `/assets/*` get a 1-year immutable cache
- *  - other non-`/api` GETs without a file extension get `index.html` (client-side routes)
+ *  - other non-`/api` GETs without a file extension get `index.html` (client-side routes),
+ *    as do repo pages (`/repo/owner/name`, whose name may contain a dot)
  *  - missing files with an extension and unknown `/api/*` paths stay 404
  */
 export function mountStatic(app: Hono<{ Bindings: Env }>, root: string): string {
@@ -70,7 +73,8 @@ export function mountStatic(app: Hono<{ Bindings: Env }>, root: string): string 
     return res;
   });
   app.get("*", async (c, next) => {
-    if (isApiPath(c.req.path) || path.extname(c.req.path)) return next();
+    // Repo pages can end in what looks like an extension (/repo/mrdoob/three.js).
+    if (isApiPath(c.req.path) || (path.extname(c.req.path) && !isAppPath(c.req.path))) return next();
     c.header("Cache-Control", "no-cache");
     return c.html(indexHtml);
   });

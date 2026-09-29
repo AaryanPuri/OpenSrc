@@ -16,7 +16,7 @@ import {
   type RepoFilter,
   type RepoSort,
 } from '../../../shared/repoFilter';
-import { useDataset } from '../data/DatasetContext';
+import { useDataset } from '../data/dataset';
 import {
   BASE_QUALIFIERS,
   buildGitHubQuery,

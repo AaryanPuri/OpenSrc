@@ -112,12 +112,15 @@ export function ThemeGlyph({ dark }: { dark: boolean }) {
   );
 }
 
+/** Corner radius that grows with the avatar, like a patch cut to size. */
+const radius = (size: number) => Math.max(5, Math.round(size * 0.22));
+
 /** A monogram on a scrap of fabric: used for sample data and as the avatar fallback. */
 export function PatchAvatar({ name, size = 20 }: { name: string; size?: number }) {
   return (
     <span
       className="relative grid shrink-0 place-items-center overflow-hidden rounded-[5px] ring-1 ring-black/10"
-      style={{ width: size, height: size, ...fabricStyle(fabricFor(name), 0.6) }}
+      style={{ width: size, height: size, borderRadius: radius(size), ...fabricStyle(fabricFor(name), 0.6) }}
       aria-hidden="true"
     >
       <span
@@ -144,7 +147,7 @@ export function RepoAvatar({ owner, size = 20, offline = false }: { owner: strin
       decoding="async"
       onError={() => setFailed(true)}
       className="shrink-0 rounded-[5px] bg-surface-3 ring-1 ring-line"
-      style={{ width: size, height: size }}
+      style={{ width: size, height: size, borderRadius: radius(size) }}
     />
   );
 }

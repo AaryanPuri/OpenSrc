@@ -177,6 +177,12 @@
     border: 1px solid rgb(var(--line-strong) / 0.55);
   }
 
+  /* A patch that only narrows issues (repo directory): basted on, not sewn. */
+  .patch-issues {
+    @apply bg-transparent text-muted shadow-none;
+    border: 1px dashed rgb(var(--line-strong) / 0.8);
+  }
+
   /* Toggle chips in the refine panel. */
   .chip {
     @apply relative inline-flex h-8 items-center gap-1.5 rounded-full border border-line bg-transparent px-3 text-[13px] text-muted transition-colors duration-150 hover:border-line-strong hover:text-fg;

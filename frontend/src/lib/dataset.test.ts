@@ -89,7 +89,7 @@ describe('compact repo index', () => {
     const gz = gzipSync(text, { level: 9 }).length;
     // ~1.5k repos should stay well under 100 KB gzipped.
     console.info(`compact index: ${text.length} bytes, ${gz} gzipped`);
-    expect(gz / repos.length).toBeLessThan(62);
+    expect(gz / repos.length).toBeLessThan(60);
   });
 
   it('rejects an unknown format', () => {

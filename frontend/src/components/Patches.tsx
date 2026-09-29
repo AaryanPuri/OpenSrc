@@ -1,5 +1,16 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { CalendarClock, Gauge, Hash, MessageCircleOff, MessagesSquare, Sparkles, Tag, Terminal, X } from 'lucide-react';
+import {
+  CalendarClock,
+  Gauge,
+  Hash,
+  MessageCircleOff,
+  MessagesSquare,
+  Sparkles,
+  Tag,
+  Terminal,
+  X,
+  Zap,
+} from 'lucide-react';
 import { forwardRef, useEffect, useRef } from 'react';
 import { FieldBadge } from './FieldBadge';
 import { KIND_LABEL, type Chip } from '../lib/parseQuery';
@@ -36,6 +47,8 @@ export function ChipGlyph({ chip }: { chip: Pick<Chip, 'kind' | 'id' | 'color'> 
       );
     case 'recency':
       return <CalendarClock className={`${cls} text-indigo`} aria-hidden="true" />;
+    case 'response':
+      return <Zap className={`${cls} text-indigo`} aria-hidden="true" />;
     case 'qualifier':
       return <Terminal className={`${cls} text-muted`} aria-hidden="true" />;
     default:
@@ -73,14 +86,22 @@ export const Patch = forwardRef<HTMLLIElement, PatchProps>(function Patch({ chip
       }}
       // Hover mirrors the tilt, so rotation never exceeds ~1.5°.
       whileHover={{ rotate: -r, y: -2 }}
-      className={`patch h-10 max-w-full pl-3 ${onRemove ? 'pr-1' : 'pr-3'} sm:h-9`}
-      title={chip.detail}
+      className={`patch h-10 max-w-full pl-3 ${onRemove ? 'pr-1' : 'pr-3'} sm:h-9 ${chip.scope === 'issues' ? 'patch-issues' : ''}`}
+      title={chip.scope === 'issues' ? 'Applies to issues: narrows the live issues on each repo page' : chip.detail}
       data-testid="filter-chip"
       data-kind={chip.kind}
     >
       <ChipGlyph chip={chip} />
       <span className="sr-only">{KIND_LABEL[chip.kind]}:</span>
       <span className="truncate">{chip.label}</span>
+      {chip.scope === 'issues' && (
+        <span
+          className="shrink-0 rounded-[4px] bg-fg/[0.07] px-1 text-[11px] font-semibold tracking-[0.04em] text-muted"
+          style={{ fontVariantCaps: 'all-small-caps' }}
+        >
+          <span className="sr-only">(applies to </span>issues<span className="sr-only">)</span>
+        </span>
+      )}
       {onRemove && (
         <button
           ref={removeRef}

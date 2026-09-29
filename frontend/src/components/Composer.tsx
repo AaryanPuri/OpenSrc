@@ -4,14 +4,31 @@ import { forwardRef, useEffect, useId, useImperativeHandle, useMemo, useRef, use
 import { useAutoDemo } from '../hooks/useAutoDemo';
 import { useIsomorphicLayoutEffect } from '../hooks/useIsomorphicLayoutEffect';
 import { rememberAiParse } from '../lib/aiParse';
-import { EXAMPLE_QUERIES } from '../lib/examples';
+import { EXAMPLE_QUERIES, REPO_EXAMPLE_QUERIES } from '../lib/examples';
 import { getChips, parseQuery, removeChip, type Chip, type ParsedQuery } from '../lib/parseQuery';
+import { removeRepoChip, repoChips } from '../lib/repoSearch';
 import { TIME_PRESETS, applyPreset, matchPreset, type TimePresetId } from '../lib/presets';
 import { NeedleIcon } from './icons';
 import { PatchStrip } from './Patches';
 
 /** The idle demo types these once, then leaves the last one as a suggestion. */
-const DEMO_QUERIES = EXAMPLE_QUERIES.slice(0, 3);
+const DEMO_QUERIES = {
+  issues: EXAMPLE_QUERIES.slice(0, 3),
+  repos: REPO_EXAMPLE_QUERIES.slice(0, 3),
+};
+
+const COPY = {
+  issues: {
+    aria: 'Describe the issues you want to work on',
+    button: 'Find issues',
+    hint: 'Patches appear as you type: a language, a field, how hard, what kind of work.',
+  },
+  repos: {
+    aria: 'Describe the repos you want to contribute to',
+    button: 'Find repos',
+    hint: 'Patches appear as you type: a language, a field, beginner-friendly, fast maintainers.',
+  },
+};
 
 interface Props {
   value: string;
@@ -26,6 +43,11 @@ interface Props {
   autoplay?: boolean;
   /** Claude's reading of the submitted query `q`, used while the text still matches it. */
   ai?: { q: string; parsed: ParsedQuery } | null;
+  /**
+   * `repos`: the directory's search. Its own examples, patches read for repos
+   * (issue-only ones marked "issues") and no time picker.
+   */
+  mode?: 'issues' | 'repos';
 }
 
 function useDebouncedText(value: string, ms: number) {
@@ -49,13 +71,16 @@ function useDebouncedText(value: string, ms: number) {
  * is visible before you even search.
  */
 export const Composer = forwardRef<HTMLTextAreaElement, Props>(function Composer(
-  { value, onChange, onSubmit, onEdit, loading, compact, autoplay = false, ai = null },
+  { value, onChange, onSubmit, onEdit, loading, compact, autoplay = false, ai = null, mode = 'issues' },
   ref,
 ) {
   const [focused, setFocused] = useState(false);
   const ids = useId();
   const [liveText, flushNext] = useDebouncedText(value, 160);
-  const demo = useAutoDemo(DEMO_QUERIES, autoplay && !value && !focused);
+  const demoQueries = DEMO_QUERIES[mode];
+  const copy = COPY[mode];
+  const repos = mode === 'repos';
+  const demo = useAutoDemo(demoQueries, autoplay && !value && !focused);
   const input = useRef<HTMLTextAreaElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
   useImperativeHandle(ref, () => input.current as HTMLTextAreaElement);
@@ -71,15 +96,15 @@ export const Composer = forwardRef<HTMLTextAreaElement, Props>(function Composer
   // While the demo is mid-word, parse only the finished words so half-typed
   // fragments ("d", "datab") never flash up as keyword patches.
   const demoText =
-    demo.typing && !DEMO_QUERIES.includes(demo.text)
+    demo.typing && !demoQueries.includes(demo.text)
       ? demo.text.slice(0, Math.max(0, demo.text.lastIndexOf(' ')))
       : demo.text;
   const shownText = demo.active ? demoText : liveText;
   // Claude's reading applies only while the box still holds the text it read.
-  const aiShown = !demo.active && !!ai && shownText.trim() === ai.q;
+  const aiShown = !repos && !demo.active && !!ai && shownText.trim() === ai.q;
   const localParsed = useMemo(() => parseQuery(shownText), [shownText]);
   const parsed = aiShown ? ai.parsed : localParsed;
-  const chips = useMemo(() => getChips(parsed), [parsed]);
+  const chips = useMemo(() => (repos ? repoChips(parsed) : getChips(parsed)), [parsed, repos]);
   const preset = matchPreset(parsed);
 
   const edit = (text: string) => {
@@ -94,7 +119,7 @@ export const Composer = forwardRef<HTMLTextAreaElement, Props>(function Composer
     if (fromAi) rememberAiParse(next.raw.trim().replace(/\s+/g, ' '), next);
     edit(next.raw);
   };
-  const onRemove = (chip: Chip) => editFrom((p) => removeChip(p, chip));
+  const onRemove = (chip: Chip) => editFrom((p) => (repos ? removeRepoChip(p, chip) : removeChip(p, chip)));
   const onPreset = (id: TimePresetId) => editFrom((p) => applyPreset(p, id));
 
   const inputSize = compact ? 'text-[17px] leading-[1.35]' : 'text-[18px] leading-[1.35] sm:text-[21px]';
@@ -141,7 +166,7 @@ export const Composer = forwardRef<HTMLTextAreaElement, Props>(function Composer
               demo.stop();
             }}
             onBlur={() => setFocused(false)}
-            aria-label="Describe the issues you want to work on"
+            aria-label={copy.aria}
             aria-describedby={`${ids}-hint`}
             autoComplete="off"
             autoCorrect="off"
@@ -170,7 +195,7 @@ export const Composer = forwardRef<HTMLTextAreaElement, Props>(function Composer
                   )}
                 </span>
               ) : (
-                <span className="line-clamp-2 font-display italic text-subtle">{EXAMPLE_QUERIES[0]}</span>
+                <span className="line-clamp-2 font-display italic text-subtle">{demoQueries[0]}</span>
               )}
             </div>
           )}
@@ -194,7 +219,7 @@ export const Composer = forwardRef<HTMLTextAreaElement, Props>(function Composer
           data-testid="search-submit"
         >
           <NeedleIcon className="h-[18px] w-[18px] transition-transform duration-300 group-hover:-rotate-12 group-active:translate-x-1" />
-          <span className="hidden sm:inline">Find issues</span>
+          <span className="hidden sm:inline">{copy.button}</span>
         </motion.button>
 
         {/* Running stitch along the bottom edge while a search is in flight. */}
@@ -227,18 +252,16 @@ export const Composer = forwardRef<HTMLTextAreaElement, Props>(function Composer
               </button>
             ) : null
           }
-          emptyHint={
-            <span id={`${ids}-hint`}>
-              Patches appear as you type: a language, a field, how hard, what kind of work.
-            </span>
-          }
+          emptyHint={<span id={`${ids}-hint`}>{copy.hint}</span>}
         />
       </div>
 
-      {/* Time picker */}
-      <div className="seam-t flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2.5 sm:px-5">
-        <TimePicker value={demo.active ? null : preset} onPick={onPreset} />
-      </div>
+      {/* Time picker (issues only: repos are narrowed in the directory's filters) */}
+      {!repos && (
+        <div className="seam-t flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2.5 sm:px-5">
+          <TimePicker value={demo.active ? null : preset} onPick={onPreset} />
+        </div>
+      )}
     </div>
   );
 });
