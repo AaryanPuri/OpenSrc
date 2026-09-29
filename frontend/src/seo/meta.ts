@@ -196,6 +196,15 @@ export function issuesMeta(site: string, q: string): PageMeta {
   });
 }
 
+export function accountMeta(site: string): PageMeta {
+  return pageMeta(site, {
+    title: `Your account${SUFFIX}`,
+    description: 'Your OpenSrc account: saved repos, issues and searches, and the weekly newsletter.',
+    path: '/account',
+    noindex: true,
+  });
+}
+
 export function notFoundMeta(site: string, path: string, title = `Page not found${SUFFIX}`): PageMeta {
   return pageMeta(site, {
     title,

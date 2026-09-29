@@ -3,13 +3,16 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Outlet, useNavigate } from 'react-router';
 import { Footer } from './components/Footer';
 import { Header } from './components/Header';
+import { NewsletterNotice } from './components/NewsletterNotice';
 import { SavedDrawer } from './components/SavedDrawer';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useSaved, type RepoLike } from './hooks/useSaved';
+import { useSession } from './hooks/useSession';
 import type { ShellContext } from './hooks/useShell';
 import { useTheme } from './hooks/useTheme';
 import { useUrlState } from './hooks/useUrlState';
 import { fabricFor, fabricStyle } from './lib/fabric';
+import { logout, startSession } from './lib/session';
 import { KEYS } from './lib/storage';
 import type { Issue } from './lib/types';
 
@@ -25,6 +28,9 @@ export function AppShell() {
   const { theme, toggle: toggleTheme } = useTheme();
   const [url, setUrl] = useUrlState();
   const [token, setToken] = useLocalStorage<string | null>(KEYS.token, null);
+  const session = useSession();
+  // After hydration: which optional features the server has, and who is signed in.
+  useEffect(() => void startSession(), []);
   const {
     saved,
     isSaved,
@@ -34,8 +40,12 @@ export function AppShell() {
     isRepoSaved,
     toggleRepo,
     removeRepo,
+    savedSearches,
+    isSearchSaved,
+    toggleSearch,
+    removeSearch,
     clear: clearSaved,
-  } = useSaved();
+  } = useSaved(session);
   const navigate = useNavigate();
   const [savedOpen, setSavedOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -97,9 +107,47 @@ export function AppShell() {
     setSettingsOpen(true);
   }, []);
 
+  const openSaved = useCallback(() => setSavedOpen(true), []);
+  const signOut = useCallback(() => void logout(), []);
+  const savedCounts = useMemo(
+    () => ({ repos: savedRepos.length, issues: saved.length, searches: savedSearches.length }),
+    [savedRepos.length, saved.length, savedSearches.length],
+  );
+
   const context = useMemo<ShellContext>(
-    () => ({ theme, token, searchRef, isSaved, onToggleSave, isRepoSaved, onToggleRepoSave, openSettings, homeTick }),
-    [theme, token, isSaved, onToggleSave, isRepoSaved, onToggleRepoSave, openSettings, homeTick],
+    () => ({
+      theme,
+      token,
+      searchRef,
+      isSaved,
+      onToggleSave,
+      isRepoSaved,
+      onToggleRepoSave,
+      isSearchSaved,
+      onToggleSearch: toggleSearch,
+      openSettings,
+      openSaved,
+      savedCounts,
+      session,
+      signOut,
+      homeTick,
+    }),
+    [
+      theme,
+      token,
+      isSaved,
+      onToggleSave,
+      isRepoSaved,
+      onToggleRepoSave,
+      isSearchSaved,
+      toggleSearch,
+      openSettings,
+      openSaved,
+      savedCounts,
+      session,
+      signOut,
+      homeTick,
+    ],
   );
 
   return (
@@ -115,7 +163,9 @@ export function AppShell() {
           ref={savedBtnRef}
           theme={theme}
           onToggleTheme={toggleTheme}
-          savedCount={saved.length + savedRepos.length}
+          savedCount={saved.length + savedRepos.length + savedSearches.length}
+          session={session}
+          onSignOut={signOut}
           onOpenSaved={() => setSavedOpen(true)}
           onHome={goHome}
           token={token}
@@ -126,6 +176,7 @@ export function AppShell() {
           onSettingsOpenChange={setSettingsOpen}
         />
 
+        <NewsletterNotice />
         <main id="main" className="flex-1">
           <Outlet context={context} />
         </main>
@@ -136,8 +187,11 @@ export function AppShell() {
           onClose={() => setSavedOpen(false)}
           saved={saved}
           savedRepos={savedRepos}
+          savedSearches={savedSearches}
           onRemove={removeSaved}
           onRemoveRepo={removeRepo}
+          onRemoveSearch={removeSearch}
+          synced={session.status === 'user'}
           onClear={clearSaved}
         />
 

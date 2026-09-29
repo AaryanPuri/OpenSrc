@@ -4,6 +4,16 @@
 # Deploy from backend/:   npx wrangler deploy
 # Secrets (once each):    npx wrangler secret put GITHUB_TOKEN
 #                         npx wrangler secret put ANTHROPIC_API_KEY   (optional)
+#
+# Optional login, synced saves and newsletter (docs/deploy.md, section 3). Each stays off (503) until set:
+#   npx wrangler secret put DATABASE_URL                 libsql://<db>.turso.io
+#   npx wrangler secret put DATABASE_AUTH_TOKEN
+#   npx wrangler secret put GITHUB_OAUTH_CLIENT_ID
+#   npx wrangler secret put GITHUB_OAUTH_CLIENT_SECRET
+#   npx wrangler secret put SESSION_SECRET
+#   npx wrangler secret put NEWSLETTER_SECRET
+#   npx wrangler secret put RESEND_API_KEY
+#   npx wrangler secret put NEWSLETTER_FROM              OpenSrc <digest@opensrc.studio>
 
 name = "opensrc-api"
 main = "src/app.ts"
@@ -16,6 +26,10 @@ workers_dev = true
 routes = [
   { pattern = "opensrc.studio/api/*", zone_name = "opensrc.studio" },
 ]
+
+# The public origin: OAuth callback, links in emails, and the Origin allowed to make writes.
+[vars]
+SITE_URL = "https://opensrc.studio"
 
 [observability]
 enabled = true

@@ -21,6 +21,7 @@ export default {
         warn: token('warn'),
         info: token('info'),
         danger: token('danger'),
+        ok: token('ok'),
       },
       fontFamily: {
         display: ['"Fraunces Variable"', 'Fraunces', 'ui-serif', 'Georgia', 'serif'],

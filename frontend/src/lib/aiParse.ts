@@ -8,6 +8,7 @@
  * the local parse.
  */
 import { DIFFICULTIES, ISSUE_TYPES } from './dictionary';
+import { getHealth, resetHealth } from './health';
 import {
   MAX_COMMENTS,
   domainMatchById,
@@ -19,19 +20,17 @@ import {
   type Since,
 } from './parseQuery';
 
-const HEALTH_URL = '/api/health';
 const PARSE_URL = '/api/parse';
 /** Past this, the local parse stays: a late upgrade would reshuffle results the user is already reading. */
 export const AI_PARSE_TIMEOUT_MS = 4000;
 
-let llmAvailable: Promise<boolean> | null = null;
 /** q → Claude's parse of it (or a parse derived from one by editing a patch). */
 const parses = new Map<string, ParsedQuery>();
 const inflight = new Map<string, Promise<ParsedQuery | null>>();
 
 /** Test hook: forget the health check and every cached parse. */
 export function resetAiParseState(): void {
-  llmAvailable = null;
+  resetHealth();
   parses.clear();
   inflight.clear();
 }
@@ -63,12 +62,7 @@ async function getJson(url: string, ms: number): Promise<unknown> {
 
 /** One `/api/health` call per page session; false when the server (or its API key) is absent. */
 export function checkLlmAvailable(): Promise<boolean> {
-  if (!llmAvailable) {
-    llmAvailable = getJson(HEALTH_URL, AI_PARSE_TIMEOUT_MS)
-      .then((j) => typeof j === 'object' && j !== null && (j as { llm?: unknown }).llm === true)
-      .catch(() => false);
-  }
-  return llmAvailable;
+  return getHealth().then((h) => h.llm);
 }
 
 /** Claude's parse for exactly this query text, if we have one. */

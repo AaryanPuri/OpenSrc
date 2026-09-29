@@ -187,6 +187,19 @@ describe('server render entry', () => {
     expect(renderPage('/nope', { dataset }).meta?.robots).toContain('noindex');
     expect(renderPage('/?q=rust', { dataset }).meta?.robots).toContain('noindex');
     expect(renderPage('/', { dataset }).meta?.robots).toBeNull();
+    expect(renderPage('/account', { dataset }).meta?.robots).toContain('noindex');
+  });
+
+  it('renders the account page and the newsletter card without login or newsletter state', () => {
+    const account = renderPage('/account', { dataset }).html;
+    expect(account).toContain('Your account');
+    expect(account).toContain('data-testid="account-loading"');
+    expect(account).not.toContain('Sign in');
+    // Before /api/health answers, the card offers RSS (and no "coming soon" yet).
+    const home = renderPage('/', { dataset }).html;
+    expect(home).toContain('data-testid="newsletter-rss"');
+    expect(home).not.toContain('newsletter-soon');
+    expect(home).not.toContain('data-testid="sign-in"');
   });
 
   it('renders a pre-rendered slice exactly like the whole directory', () => {

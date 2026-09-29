@@ -6,3 +6,8 @@ coverage
 *.tsbuildinfo
 .DS_Store
 .env
+
+# Local database (DATABASE_URL=file:.data/opensrc.db) and Wrangler state/secrets
+.data/
+.wrangler/
+.dev.vars

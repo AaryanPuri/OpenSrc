@@ -7,7 +7,9 @@ import { CollectionQuilt } from '../components/CollectionQuilt';
 import { Composer } from '../components/Composer';
 import { DomainQuilt, Hero } from '../components/Hero';
 import { RepoFilters } from '../components/RepoFilters';
+import { NewsletterForm } from '../components/NewsletterForm';
 import { RepoGrid } from '../components/RepoGrid';
+import { SaveSearchButton } from '../components/SaveSearchButton';
 import { useDocumentMeta } from '../hooks/useDocumentMeta';
 import { useRepoUrlState } from '../hooks/useRepoUrlState';
 import { useShell } from '../hooks/useShell';
@@ -108,7 +110,8 @@ export function HomePage() {
               </span>
             )}
           </h2>
-          <p className="text-[13px] text-subtle">
+          <p className="flex flex-wrap items-center gap-x-1 text-[13px] text-subtle">
+            {text && <SaveSearchButton scope="repos" q={text} />}
             {status === 'ready' && `by ${REPO_SORT_LABELS[url.sort].label.toLowerCase()}`}
             {text && (
               <>
@@ -183,6 +186,9 @@ export function HomePage() {
             title="Browse by field"
             sub={`The same ${directorySize ? directorySize.toLocaleString('en') : ''} repos, by what they are about.`}
           />
+        </div>
+        <div className="mx-auto mt-16 max-w-6xl px-4 sm:px-6">
+          <NewsletterForm />
         </div>
       </>
     );

@@ -1,0 +1,77 @@
+# Weekly newsletter digest (backend/src/newsletter/).
+#
+# One-time setup: Settings > Secrets and variables > Actions > add these repository secrets
+#   DATABASE_URL         libsql://<db>-<org>.turso.io (the same database as the API Worker)
+#   DATABASE_AUTH_TOKEN  a Turso token for it
+#   RESEND_API_KEY       Resend API key (sending access is enough)
+#   NEWSLETTER_SECRET    the same value as the Worker's, so unsubscribe links verify
+#   NEWSLETTER_FROM      OpenSrc <digest@opensrc.studio>
+# Optional repository variable: DIGEST_DAILY_CAP (default 90; Resend's free plan allows 100 emails a day).
+#
+# Monday 14:00 UTC sends this week's digest up to the daily cap. The Tuesday and Wednesday runs
+# pick up whoever the cap left over (each subscriber is marked with the ISO week once sent),
+# and do nothing when everyone already has it. Without the secrets, the job skips itself.
+name: Weekly digest
+
+on:
+  schedule:
+    - cron: '0 14 * * 1'
+    - cron: '0 14 * * 2'
+    - cron: '0 14 * * 3'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run: list who would get what, send nothing'
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: weekly-digest
+  cancel-in-progress: false
+
+jobs:
+  digest:
+    name: Send the weekly digest
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DATABASE_AUTH_TOKEN: ${{ secrets.DATABASE_AUTH_TOKEN }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      NEWSLETTER_SECRET: ${{ secrets.NEWSLETTER_SECRET }}
+      NEWSLETTER_FROM: ${{ secrets.NEWSLETTER_FROM }}
+      DIGEST_DAILY_CAP: ${{ vars.DIGEST_DAILY_CAP || '90' }}
+      SITE_URL: https://opensrc.studio
+    steps:
+      - name: Check configuration
+        id: config
+        run: |
+          if [ -z "$DATABASE_URL" ] || [ -z "$NEWSLETTER_SECRET" ]; then
+            echo "Newsletter secrets are not set; skipping."
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.config.outputs.enabled == 'true'
+
+      - uses: actions/setup-node@v4
+        if: steps.config.outputs.enabled == 'true'
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install (backend)
+        if: steps.config.outputs.enabled == 'true'
+        run: npm ci
+        working-directory: backend
+
+      - name: Send (or dry run)
+        if: steps.config.outputs.enabled == 'true'
+        working-directory: backend
+        run: npm run digest -- ${{ (github.event_name == 'workflow_dispatch' && inputs.dry_run) && '--dry-run' || '' }}

@@ -4,8 +4,10 @@ import { forwardRef, useEffect, useId, useState } from 'react';
 import { NavLink, useLocation } from 'react-router';
 import { useHydrated } from '../hooks/useHydrated';
 import type { Theme } from '../hooks/useTheme';
+import type { SessionState } from '../lib/session';
 import { LogoMark, ThemeGlyph } from './icons';
 import { SettingsPopover } from './SettingsPopover';
+import { UserMenu } from './UserMenu';
 
 interface Props {
   theme: Theme;
@@ -19,6 +21,8 @@ interface Props {
   onDemoChange: (d: boolean) => void;
   settingsOpen: boolean;
   onSettingsOpenChange: (o: boolean) => void;
+  session: SessionState;
+  onSignOut: () => void;
 }
 
 export function Wordmark({ className = '' }: { className?: string }) {
@@ -119,7 +123,7 @@ export const Header = forwardRef<HTMLButtonElement, Props>(function Header(props
             className="btn-ghost relative min-w-11"
             onClick={props.onOpenSaved}
             data-testid="saved-button"
-            aria-label={`Saved issues (${props.savedCount})`}
+            aria-label={`Saved items (${props.savedCount})`}
           >
             <Bookmark className="h-[18px] w-[18px]" />
             <span className="hidden sm:inline">Saved</span>
@@ -158,6 +162,7 @@ export const Header = forwardRef<HTMLButtonElement, Props>(function Header(props
             open={props.settingsOpen}
             onOpenChange={props.onSettingsOpenChange}
           />
+          <UserMenu session={props.session} onSignOut={props.onSignOut} />
           <button
             type="button"
             className="icon-btn lg:hidden"

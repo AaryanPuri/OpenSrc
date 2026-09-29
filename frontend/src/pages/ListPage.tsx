@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router';
 import type { DatasetMeta } from '../../../shared/repo';
 import { LanguageChip, LanguageDot } from '../components/BrowseLinks';
 import { FieldBadge } from '../components/FieldBadge';
+import { NewsletterForm } from '../components/NewsletterForm';
 import { RepoGrid } from '../components/RepoGrid';
 import { useDataset } from '../data/dataset';
 import { useDocumentMeta } from '../hooks/useDocumentMeta';
@@ -178,6 +179,8 @@ function ListPage({ kind, id, label, badge }: Props) {
           )}
         </section>
       )}
+
+      <NewsletterForm key={`${kind}:${id}`} className="mt-14" languages={kind === 'language' ? [id] : []} />
     </div>
   );
 }

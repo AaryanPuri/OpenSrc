@@ -48,9 +48,22 @@ From the repo root, `npm start` builds both halves and runs this. The static ser
 | `SERVE_STATIC`      | no                    | A directory to serve the frontend from (overrides the above), or `off` to turn static serving off.                       |
 | `COLLECTOR_TOKEN`   | for `npm run collect` | Token for the repo-directory collector (falls back to `GITHUB_TOKEN`). Public read access is enough.                     |
 
+Optional accounts and newsletter (each switches itself off when unset; setup in [`docs/deploy.md`](../docs/deploy.md#3-login--newsletter-optional)):
+
+| Var                                                    | Effect                                                                                                            |
+| ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| `SITE_URL`                                             | Public origin: OAuth callback, email links and the Origin allowed to make writes. `http://localhost:5173` in dev. |
+| `DATABASE_URL`, `DATABASE_AUTH_TOKEN`                  | libSQL. `file:.data/opensrc.db` on Node; Turso (`libsql://…`) on Workers.                                         |
+| `GITHUB_OAUTH_CLIENT_ID`, `GITHUB_OAUTH_CLIENT_SECRET` | GitHub OAuth App (no scopes). Login needs these, the database and `SESSION_SECRET`.                               |
+| `SESSION_SECRET`                                       | Signs the OAuth state cookie.                                                                                     |
+| `NEWSLETTER_SECRET`                                    | Signs confirm and unsubscribe links. The newsletter needs it, the database and a mail provider.                   |
+| `RESEND_API_KEY`, `NEWSLETTER_FROM`                    | Sends email through Resend.                                                                                       |
+| `MAIL_PROVIDER=console`                                | Prints emails and their links to the log instead (local development).                                             |
+| `DIGEST_DAILY_CAP`                                     | Most digest emails per UTC day (default 90).                                                                      |
+
 ## Endpoints
 
-- `GET /api/health` returns `{ ok, llm, githubToken }`.
+- `GET /api/health` returns `{ ok, llm, githubToken, db, auth, newsletter }`.
 - `GET /api/parse?q=...` returns the shared `ParsedQuery` plus `interpretedBy: "llm" | "rules"`. The fields are `raw`, `languages`, `domains` (`{id, label, matched, term, topics}`), `difficulty`, `types`, `keywords`, `qualifiers`, `maxComments` and `since`. The frontend calls this when `/api/health` reports `llm: true`.
 - `GET /api/search?q=...&page=1&sort=best|newest|comments` returns `{ parsed, githubQuery, total, items, source: "github"|"fixtures", rateLimit?, warning?, fallbackReason? }`.
   - **`gq=<raw GitHub query>`** skips parsing and runs that exact query through the cached client with the server token. The frontend uses this, since it parses on its own.
@@ -64,7 +77,46 @@ From the repo root, `npm start` builds both halves and runs this. The static ser
   - `demo=1` forces the bundled sample data.
   - Page size is 20 and pages are capped at 50.
 
-CORS allows any `localhost`, `127.0.0.1` or `[::1]` origin.
+- Accounts and newsletter (below): `/api/auth/*`, `/api/me`, `/api/saved*`, `/api/newsletter/*`. They answer
+  `503 {"error":"feature disabled"}` when their configuration is missing.
+
+CORS allows `GET` from any `localhost`, `127.0.0.1` or `[::1]` origin. Every `POST`, `PUT`, `PATCH` and `DELETE`
+must carry an `Origin` of this site (`SITE_URL`, the request's own origin, or localhost while `SITE_URL` is local)
+or it gets 403 (`src/middleware/csrf.ts`). The mail client's one-click unsubscribe is the one exception.
+
+## Accounts, saved items and the newsletter
+
+All optional, and all built on Web Crypto, `fetch` and `@libsql/client`, so they run on Node and Workers alike.
+
+- **Database** (`src/db/`): SQL migrations in `src/db/migrations/` (TypeScript modules holding plain SQL, so the
+  Worker bundles them), applied by a small runner. `npm run db:migrate` applies them to `DATABASE_URL`; the API
+  also applies missing ones on its first query in each process or Worker isolate. `src/db/index.ts` only uses the
+  `@libsql/client/web` HTTP client (the Worker); `src/node.ts` builds a full client with `src/db/node.ts` (files,
+  `:memory:`) and passes it to `createApp({ db })`.
+- **Sign in with GitHub** (`src/auth/`): `GET /api/auth/github?returnTo=/path` sets a signed, 10-minute state
+  cookie and redirects to GitHub (no scopes). `GET /api/auth/github/callback` checks the state, exchanges the code,
+  reads `GET /user`, **drops the access token**, upserts the user and sets the session cookie
+  (`opensrc_session`: 32 random bytes, HttpOnly, SameSite=Lax, Path=/, Secure on https, 30 days). Only the
+  token's SHA-256 is stored. `returnTo` must be a path on this site, else `/`. `POST /api/auth/logout`,
+  `GET /api/me` (`{ user }`, null when signed out).
+- **Saved items** (`src/routes/saved.ts`): `GET /api/saved`, `PUT|DELETE /api/saved/:kind/:key` (kind
+  `issue|repo|search`, payload a JSON object up to 8 KB), `POST /api/saved/import` (up to 500 items; keys the
+  server already has are kept, so repeating an import changes nothing; invalid or oversized items are skipped and
+  counted). At most 3,000 items per user.
+- **Newsletter** (`src/routes/newsletter.ts`, `src/newsletter/`, `src/mail/`): `POST /api/newsletter/subscribe
+{ email, languages[] }` stores a pending subscriber and emails an HMAC-signed confirm link (valid 7 days);
+  `GET /api/newsletter/confirm?token=` activates it; `GET|POST /api/newsletter/unsubscribe?token=` is one click
+  (also in the digest's `List-Unsubscribe` and `List-Unsubscribe-Post` headers). The answer to a sign-up is the
+  same whatever the address's state. Rate limits: an in-memory token bucket per IP (on Workers, per isolate
+  only) and one confirmation per address per 10 minutes. `GET|PUT|DELETE /api/newsletter/me` manages the
+  subscription linked to the signed-in account (linked when it is confirmed while signed in).
+- **Digest** (`npm run digest`, `src/newsletter/digest.ts`): reads `data/repos.json` and `data/meta.json`; each
+  active subscriber gets "New first-PR repos in {Lang} this week" (first listed in the last 7 days and first-PR
+  friendly, at most 5 per language), topped up with the best-scoring repos when the week is thin. It stops at
+  `DIGEST_DAILY_CAP` emails per UTC day (counting earlier runs) or on Resend's 429, and marks each subscriber with
+  the ISO week, so the next run carries on. `--dry-run` sends and writes nothing; `--preview rust,go --out x.html`
+  renders a sample without a database. `.github/workflows/digest.yml` runs it on Mondays with Tuesday and
+  Wednesday catch-ups.
 
 Types are exported from `src/types.ts`: `ParsedQuery` and `InterpretedQuery` (re-exported from `shared/types.ts`), plus `Issue` and `SearchResponse`.
 

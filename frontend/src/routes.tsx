@@ -2,6 +2,7 @@ import { lazy, Suspense, useMemo } from 'react';
 import { Route, Routes } from 'react-router';
 import { AppShell } from './AppShell';
 import { DatasetProvider } from './data/DatasetContext';
+import { AccountPage } from './pages/AccountPage';
 import type { InitialDataset } from './data/dataset';
 import { CollectionPage, CollectionsPage } from './pages/CollectionPage';
 import { HomePage } from './pages/HomePage';
@@ -59,6 +60,7 @@ export function AppRoutes({ dataset, siteUrl = DEFAULT_SITE_URL, head }: Props) 
             <Route path="collections" element={<CollectionsPage />} />
             <Route path="collections/:id" element={<CollectionPage />} />
             <Route path="submit" element={<SubmitPage />} />
+            <Route path="account" element={<AccountPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Routes>

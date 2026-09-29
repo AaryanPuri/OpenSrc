@@ -6,6 +6,7 @@ import { DomainQuilt, Hero } from '../components/Hero';
 import { IssueCard } from '../components/IssueCard';
 import { IssueCardSkeleton } from '../components/IssueCardSkeleton';
 import { RefinePanel } from '../components/RefinePanel';
+import { SaveSearchButton } from '../components/SaveSearchButton';
 import { EmptyState, ErrorState, Notice, SortControl } from '../components/ResultStates';
 import { useAiParse } from '../hooks/useAiParse';
 import { useDocumentMeta } from '../hooks/useDocumentMeta';
@@ -176,7 +177,10 @@ export function IssuesPage() {
                   'Results'
                 )}
               </h2>
-              <SortControl value={url.sort} onChange={(sort) => setUrl({ sort }, 'replace')} />
+              <div className="flex flex-wrap items-center gap-1">
+                <SaveSearchButton scope="issues" q={url.q} />
+                <SortControl value={url.sort} onChange={(sort) => setUrl({ sort }, 'replace')} />
+              </div>
             </div>
 
             {!noticeDismissed && search.notice && (

@@ -1,7 +1,8 @@
 import type { RefObject } from 'react';
 import { useOutletContext } from 'react-router';
 import type { Issue } from '../lib/types';
-import type { RepoLike } from './useSaved';
+import type { SessionState } from '../lib/session';
+import type { RepoLike, SavedSearch } from './useSaved';
 import type { Theme } from './useTheme';
 
 /** What AppShell shares with the page rendered in its <Outlet/>. */
@@ -16,8 +17,16 @@ export interface ShellContext {
   isRepoSaved: (fullName: string) => boolean;
   /** Toggles a saved repo; `from` is where the flying patch starts. */
   onToggleRepoSave: (repo: RepoLike, from: DOMRect | null) => void;
+  isSearchSaved: (scope: SavedSearch['scope'], q: string) => boolean;
+  /** Saves or forgets a search (`q` as in the URL). */
+  onToggleSearch: (scope: SavedSearch['scope'], q: string) => void;
   /** Scrolls up and opens the settings popover (token entry). */
   openSettings: () => void;
+  openSaved: () => void;
+  savedCounts: { repos: number; issues: number; searches: number };
+  /** Login state and the server's optional features (unknown until after hydration). */
+  session: SessionState;
+  signOut: () => void;
   /** Bumps every time the logo is clicked, so pages can reset their local state. */
   homeTick: number;
 }

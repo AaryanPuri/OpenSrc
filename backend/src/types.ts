@@ -62,4 +62,24 @@ export interface Env {
   ANTHROPIC_API_KEY?: string;
   ANTHROPIC_MODEL?: string;
   GITHUB_TOKEN?: string;
+  /** Public origin (https://opensrc.studio): OAuth callback, email links, allowed Origin for writes. */
+  SITE_URL?: string;
+  /** Signs the OAuth state cookie. Required for login. */
+  SESSION_SECRET?: string;
+  /** libSQL URL: libsql://… (Turso) on Workers; also file:… on Node. Unset = no login, saves or newsletter. */
+  DATABASE_URL?: string;
+  DATABASE_AUTH_TOKEN?: string;
+  /** GitHub OAuth App (no scopes). */
+  GITHUB_OAUTH_CLIENT_ID?: string;
+  GITHUB_OAUTH_CLIENT_SECRET?: string;
+  /** Newsletter mail. */
+  RESEND_API_KEY?: string;
+  /** "OpenSrc <digest@opensrc.studio>" */
+  NEWSLETTER_FROM?: string;
+  /** Signs confirm and unsubscribe links. Required for the newsletter. */
+  NEWSLETTER_SECRET?: string;
+  /** Most digest emails to send per UTC day (default 90, under Resend's free 100/day). */
+  DIGEST_DAILY_CAP?: string;
+  /** "console": log emails instead of sending them (local development). */
+  MAIL_PROVIDER?: string;
 }

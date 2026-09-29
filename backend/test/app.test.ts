@@ -31,7 +31,14 @@ describe("GET /api/health", () => {
   it("reports config flags", async () => {
     const app = createApp({ env: { GITHUB_TOKEN: "t" } });
     const res = await app.request("/api/health");
-    expect(await res.json()).toEqual({ ok: true, llm: false, githubToken: true });
+    expect(await res.json()).toEqual({
+      ok: true,
+      llm: false,
+      githubToken: true,
+      db: false,
+      auth: false,
+      newsletter: false,
+    });
   });
 });
 

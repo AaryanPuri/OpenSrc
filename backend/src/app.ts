@@ -5,6 +5,14 @@ import { searchFixtures } from "./github/fixtures.js";
 import { MAX_COMMENTS, domainMatchById, resolveLanguage } from "../../shared/parse.js";
 import { buildGitHubQuery, clampGithubQuery, parsedFromGithubQuery } from "./github/query.js";
 import { parseQuery } from "./parse/index.js";
+import { registerAuth } from "./auth/routes.js";
+import { features, ipFromHeaders, type AppEnv, type Ctx, type Deps } from "./context.js";
+import { ensureMigrated, webDbFromEnv, type Db } from "./db/index.js";
+import { mailFromEnv, type MailProvider } from "./mail/index.js";
+import { csrf, isLocalOrigin } from "./middleware/csrf.js";
+import type { TokenBucket } from "./middleware/rateLimit.js";
+import { registerNewsletter } from "./routes/newsletter.js";
+import { registerSaved } from "./routes/saved.js";
 import type {
   Difficulty,
   Env,
@@ -21,6 +29,19 @@ export interface AppOptions {
   env?: Env;
   /** Injectable fetch for GitHub calls (tests). */
   fetchImpl?: typeof fetch;
+  /**
+   * The database (Node and tests inject one, built with db/node.ts). Without it, a
+   * DATABASE_URL binding gets an HTTP client (the Worker).
+   */
+  db?: Db;
+  /** Outgoing mail (tests inject a ConsoleProvider). Default: from the env (Resend, or MAIL_PROVIDER=console). */
+  mail?: MailProvider;
+  /** Clock (tests). */
+  now?: () => number;
+  /** The caller's IP for rate limits (Node reads the socket; Workers use CF-Connecting-IP). */
+  clientIp?: (c: Ctx) => string | null;
+  /** Newsletter sign-up rate limiter (tests). */
+  newsletterLimiter?: TokenBucket;
 }
 
 const DIFFICULTIES: Difficulty[] = ["beginner", "help-wanted", "intermediate"];
@@ -68,19 +89,25 @@ export function applyOverrides<P extends ParsedQuery>(parsed: P, q: Record<strin
   return out;
 }
 
-function isLocalOrigin(origin: string): boolean {
-  try {
-    const { hostname } = new URL(origin);
-    return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "[::1]";
-  } catch {
-    return false;
-  }
-}
-
 export function createApp(opts: AppOptions = {}) {
-  const app = new Hono<{ Bindings: Env }>();
+  const app = new Hono<AppEnv>();
 
   const getEnv = (bindings: Env | undefined): Env => ({ ...(opts.env ?? {}), ...(bindings ?? {}) });
+
+  const deps: Deps = {
+    env: (c) => getEnv(c.env),
+    hasDb: (c) => !!opts.db || !!getEnv(c.env).DATABASE_URL,
+    db: async (c) => {
+      const env = getEnv(c.env);
+      const db = opts.db ?? (env.DATABASE_URL ? await webDbFromEnv(env.DATABASE_URL, env.DATABASE_AUTH_TOKEN) : null);
+      if (db) await ensureMigrated(db);
+      return db;
+    },
+    mail: (c) => opts.mail ?? mailFromEnv(getEnv(c.env), opts.fetchImpl),
+    fetchImpl: opts.fetchImpl ?? ((input, init) => fetch(input, init)),
+    now: opts.now ?? (() => Date.now()),
+    clientIp: (c) => ipFromHeaders(c) ?? opts.clientIp?.(c) ?? "unknown",
+  };
 
   app.use(
     "/api/*",
@@ -89,11 +116,22 @@ export function createApp(opts: AppOptions = {}) {
       allowMethods: ["GET", "OPTIONS"],
     }),
   );
+  // Cookie-authenticated writes must come from this site. The mail client's one-click unsubscribe has no Origin.
+  app.use("/api/*", csrf(deps, { exempt: (path) => path === "/api/newsletter/unsubscribe" }));
 
   app.get("/api/health", (c) => {
     const env = getEnv(c.env);
-    return c.json({ ok: true, llm: !!env.ANTHROPIC_API_KEY, githubToken: !!env.GITHUB_TOKEN });
+    return c.json({
+      ok: true,
+      llm: !!env.ANTHROPIC_API_KEY,
+      githubToken: !!env.GITHUB_TOKEN,
+      ...features(env, deps.hasDb(c), !!deps.mail(c)),
+    });
   });
+
+  registerAuth(app, deps);
+  registerSaved(app, deps);
+  registerNewsletter(app, deps, { limiter: opts.newsletterLimiter });
 
   app.get("/api/parse", async (c) => {
     const q = (c.req.query("q") ?? "").slice(0, MAX_QUERY_LEN);

@@ -78,7 +78,8 @@ OpenSrc checks that for you. Every night it scans GitHub for active projects wit
       <h3>✨ Also</h3>
       <ul>
         <li><strong>Browse by language and field:</strong> 31 languages and 22 fields, each with its own page.</li>
-        <li><strong>Save repos and issues</strong> to come back to later.</li>
+        <li><strong>Save repos, issues and searches</strong>, synced across devices when you sign in with GitHub.</li>
+        <li><strong>A weekly email</strong> of new first-PR repos in your languages, or the RSS feed.</li>
         <li><strong>Issue search</strong> across all of GitHub at <code>/issues</code>.</li>
         <li><strong>Fast and indexable:</strong> every page is pre-rendered HTML, with a sitemap and an RSS feed.</li>
         <li><strong>Light and dark</strong> themes, keyboard shortcuts (<kbd>/</kbd> to search), reduced-motion support and AA contrast.</li>
@@ -150,6 +151,9 @@ Copy `backend/.env.example` to `backend/.env`. Everything works without these.
 | `SITE_URL`          | The production URL used for canonical links and the sitemap (e.g. `https://opensrc.studio`) |
 | `COLLECTOR_TOKEN`   | _(GitHub Actions secret)_ A read-only token for the nightly collector                       |
 
+GitHub login, synced saves and the weekly newsletter are optional too (`DATABASE_URL`, `GITHUB_OAUTH_*`,
+`SESSION_SECRET`, `RESEND_API_KEY`, `NEWSLETTER_*`). See [`docs/deploy.md`](docs/deploy.md#3-login--newsletter-optional).
+
 </details>
 
 <details>
@@ -165,6 +169,8 @@ Copy `backend/.env.example` to `backend/.env`. Everything works without these.
 | `npm test`                              | Frontend, shared and backend tests (Vitest)                       |
 | `npm run typecheck` / `lint` / `format` | TypeScript, ESLint and Prettier                                   |
 | `npm --prefix backend run collect`      | Run the repo collector locally (needs `GITHUB_TOKEN`)             |
+| `npm --prefix backend run db:migrate`   | Create or update the optional database's tables                   |
+| `npm --prefix backend run digest`       | Send the weekly newsletter (`-- --dry-run` to preview)            |
 
 More detail: [`backend/README.md`](backend/README.md) (API and collector), [`docs/seo-and-prerender.md`](docs/seo-and-prerender.md) (pre-rendering) and [`docs/architecture.md`](docs/architecture.md) (parser and search internals).
 
@@ -180,6 +186,7 @@ More detail: [`backend/README.md`](backend/README.md) (API and collector), [`doc
 | **Rendering** | Build-time pre-rendering with React server rendering, then client hydration              |
 | **Backend**   | Hono (Node or Cloudflare Workers), GitHub REST and GraphQL APIs, optional Claude parsing |
 | **Data**      | A nightly collector on GitHub Actions writing a versioned JSON dataset                   |
+| **Accounts**  | Optional: GitHub OAuth, libSQL (Turso), Resend for the weekly digest                     |
 | **Quality**   | Vitest, ESLint, Prettier and GitHub Actions CI                                           |
 | **Hosting**   | Cloudflare                                                                               |
 
