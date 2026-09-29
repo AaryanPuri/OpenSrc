@@ -26,7 +26,7 @@ The design language is a quilt. Every field (domain) is a fabric patch with its 
 - **Design**:
   - Warm paper-and-ink light mode and an indigo "night quilt" dark mode, which follow `prefers-color-scheme` and remember your choice.
   - The theme switch crossfades using the View Transitions API.
-  - Fonts: Fraunces (display), Instrument Sans (UI), JetBrains Mono (the GitHub query).
+  - Fonts: Fraunces (display), Instrument Sans (UI), JetBrains Mono (keyboard hints).
   - Motion via framer-motion, with a full `prefers-reduced-motion` fallback. Content is never hidden behind an entrance animation.
   - AA contrast and 44px touch targets on mobile.
 - **Keyboard**: `/` focuses search, `Enter` searches, `Esc` closes overlays.

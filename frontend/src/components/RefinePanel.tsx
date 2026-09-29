@@ -3,8 +3,8 @@ import { ChevronDown, SlidersHorizontal } from 'lucide-react';
 import { useId, useState } from 'react';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { DIFFICULTIES, DOMAINS, ISSUE_TYPES, LANGUAGES, type Difficulty, type IssueType } from '../lib/dictionary';
-import { domainFabric, fabricStyle } from '../lib/fabric';
 import type { ParsedQuery } from '../lib/parseQuery';
+import { FieldBadge } from './FieldBadge';
 
 interface Props {
   parsed: ParsedQuery;
@@ -135,11 +135,7 @@ function Body({ parsed, onDifficulty, onToggleLanguage, onToggleType, onToggleDo
                 aria-pressed={parsed.domains.some((x) => x.id === id)}
                 onClick={() => onToggleDomain(id)}
               >
-                <span
-                  className="h-4 w-4 rounded-[4px] ring-1 ring-black/15"
-                  style={fabricStyle(domainFabric(id), 0.5)}
-                  aria-hidden="true"
-                />
+                <FieldBadge id={id} />
                 {d.label.replace(' & ', ' & ')}
               </button>
             );

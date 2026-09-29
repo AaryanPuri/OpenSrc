@@ -1,12 +1,12 @@
 import { motion } from 'framer-motion';
-import { ArrowRight, Check, ChevronDown, Copy, X } from 'lucide-react';
+import { ArrowRight, X } from 'lucide-react';
 import { forwardRef, useEffect, useId, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useAutoDemo } from '../hooks/useAutoDemo';
 import { rememberAiParse } from '../lib/aiParse';
 import { EXAMPLE_QUERIES } from '../lib/examples';
 import { getChips, parseQuery, removeChip, type Chip, type ParsedQuery } from '../lib/parseQuery';
 import { TIME_PRESETS, applyPreset, matchPreset, type TimePresetId } from '../lib/presets';
-import { GitHubMark, NeedleIcon } from './icons';
+import { NeedleIcon } from './icons';
 import { PatchStrip } from './Patches';
 
 /** The idle demo types these once, then leaves the last one as a suggestion. */
@@ -23,8 +23,6 @@ interface Props {
   compact?: boolean;
   /** Run the idle typing demo (landing only). */
   autoplay?: boolean;
-  /** The GitHub query behind the current results (results page only). */
-  ghQuery?: string | null;
   /** Claude's reading of the submitted query `q`, used while the text still matches it. */
   ai?: { q: string; parsed: ParsedQuery } | null;
 }
@@ -50,12 +48,10 @@ function useDebouncedText(value: string, ms: number) {
  * is visible before you even search.
  */
 export const Composer = forwardRef<HTMLTextAreaElement, Props>(function Composer(
-  { value, onChange, onSubmit, onEdit, loading, compact, autoplay = false, ghQuery, ai = null },
+  { value, onChange, onSubmit, onEdit, loading, compact, autoplay = false, ai = null },
   ref,
 ) {
   const [focused, setFocused] = useState(false);
-  const [showQuery, setShowQuery] = useState(false);
-  const [copied, setCopied] = useState(false);
   const ids = useId();
   const [liveText, flushNext] = useDebouncedText(value, 160);
   const demo = useAutoDemo(DEMO_QUERIES, autoplay && !value && !focused);
@@ -99,17 +95,6 @@ export const Composer = forwardRef<HTMLTextAreaElement, Props>(function Composer
   };
   const onRemove = (chip: Chip) => editFrom((p) => removeChip(p, chip));
   const onPreset = (id: TimePresetId) => editFrom((p) => applyPreset(p, id));
-
-  const copy = async () => {
-    if (!ghQuery) return;
-    try {
-      await navigator.clipboard.writeText(ghQuery);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    } catch {
-      /* clipboard blocked */
-    }
-  };
 
   const inputSize = compact ? 'text-[17px] leading-[1.35]' : 'text-[18px] leading-[1.35] sm:text-[21px]';
   const suggestion = demo.finished ? demo.text : null;
@@ -249,69 +234,10 @@ export const Composer = forwardRef<HTMLTextAreaElement, Props>(function Composer
         />
       </div>
 
-      {/* Time picker + GitHub query toggle */}
+      {/* Time picker */}
       <div className="seam-t flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2.5 sm:px-5">
         <TimePicker value={demo.active ? null : preset} onPick={onPreset} />
-        {ghQuery && (
-          <button
-            type="button"
-            className="ml-auto inline-flex min-h-11 items-center gap-1.5 text-xs font-medium text-muted hover:text-fg sm:min-h-9"
-            aria-expanded={showQuery}
-            aria-controls={`${ids}-gq`}
-            onClick={() => setShowQuery((s) => !s)}
-          >
-            <GitHubMark className="h-3.5 w-3.5" />
-            {showQuery ? 'Hide' : 'Show'} GitHub query
-            <ChevronDown
-              className={`h-3.5 w-3.5 transition-transform ${showQuery ? 'rotate-180' : ''}`}
-              aria-hidden="true"
-            />
-          </button>
-        )}
       </div>
-
-      {ghQuery && (
-        <div
-          id={`${ids}-gq`}
-          className={`grid transition-[grid-template-rows] duration-300 ${showQuery ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}
-          {...(showQuery ? {} : { inert: '' })}
-        >
-          <div className="overflow-hidden">
-            <div className="seam-t flex items-center gap-1 py-1 pl-4 pr-2 sm:pl-5">
-              <code
-                className="scrollbar-none fade-x min-w-0 flex-1 overflow-x-auto whitespace-nowrap py-2 pr-6 font-mono text-xs text-muted"
-                data-testid="gh-query"
-                tabIndex={0}
-                aria-label="GitHub search query"
-              >
-                {(ghQuery.match(/(?:[^\s"]+|"[^"]*")+/g) ?? []).map((part, i) => (
-                  <span key={i} className={part.includes(':') ? 'text-fg/80' : 'font-semibold text-accent'}>
-                    {i > 0 && ' '}
-                    {part}
-                  </span>
-                ))}
-              </code>
-              <button
-                type="button"
-                onClick={copy}
-                className="icon-btn shrink-0"
-                aria-label={copied ? 'Copied' : 'Copy GitHub query'}
-              >
-                {copied ? <Check className="h-4 w-4 text-accent" /> : <Copy className="h-4 w-4" />}
-              </button>
-              <a
-                href={`https://github.com/search?type=issues&q=${encodeURIComponent(ghQuery)}`}
-                target="_blank"
-                rel="noreferrer"
-                className="icon-btn shrink-0"
-                aria-label="Open this search on GitHub"
-              >
-                <GitHubMark className="h-4 w-4" />
-              </a>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 });

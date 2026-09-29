@@ -1,0 +1,56 @@
+import {
+  Accessibility,
+  Activity,
+  Atom,
+  BookOpen,
+  Blocks,
+  Box,
+  BrainCircuit,
+  Braces,
+  ChartScatter,
+  CircuitBoard,
+  Container,
+  Cpu,
+  Database,
+  FlaskConical,
+  Gamepad2,
+  Network,
+  Palette,
+  Server,
+  Shapes,
+  ShieldCheck,
+  Smartphone,
+  SquareTerminal,
+  Wrench,
+  type LucideIcon,
+} from 'lucide-react';
+
+/** One recognisable icon per field, drawn on top of the field's fabric. */
+const FIELD_ICONS: Record<string, LucideIcon> = {
+  databases: Database,
+  ml: BrainCircuit,
+  'data-science': ChartScatter,
+  frontend: Palette,
+  backend: Server,
+  devops: Container,
+  security: ShieldCheck,
+  gamedev: Gamepad2,
+  blockchain: Blocks,
+  mobile: Smartphone,
+  compilers: Braces,
+  cli: SquareTerminal,
+  accessibility: Accessibility,
+  'docs-tooling': BookOpen,
+  testing: FlaskConical,
+  networking: Network,
+  embedded: CircuitBoard,
+  systems: Cpu,
+  graphics: Shapes,
+  devtools: Wrench,
+  observability: Activity,
+  science: Atom,
+};
+
+export function fieldIcon(id: string): LucideIcon {
+  return FIELD_ICONS[id] ?? Box;
+}

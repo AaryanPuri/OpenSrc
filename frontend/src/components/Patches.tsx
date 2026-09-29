@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { CalendarClock, Gauge, Hash, MessageCircleOff, MessagesSquare, Sparkles, Tag, Terminal, X } from 'lucide-react';
 import { forwardRef, useEffect, useRef } from 'react';
-import { domainFabric, fabricStyle } from '../lib/fabric';
+import { FieldBadge } from './FieldBadge';
 import { KIND_LABEL, type Chip } from '../lib/parseQuery';
 
 /** Small deterministic tilt so a row of patches looks hand-sewn, not typeset. */
@@ -15,13 +15,7 @@ export function ChipGlyph({ chip }: { chip: Pick<Chip, 'kind' | 'id' | 'color'> 
   const cls = 'h-3.5 w-3.5 shrink-0';
   switch (chip.kind) {
     case 'domain':
-      return (
-        <span
-          className="h-4 w-4 shrink-0 rounded-[4px] ring-1 ring-black/15"
-          style={fabricStyle(domainFabric(chip.id), 0.55)}
-          aria-hidden="true"
-        />
-      );
+      return <FieldBadge id={chip.id} />;
     case 'language':
       return (
         <span

@@ -211,7 +211,6 @@ export default function App() {
                 onEdit={refine}
                 loading={search.status === 'loading'}
                 compact
-                ghQuery={ghQuery}
                 ai={aiParsed ? { q: url.q, parsed: aiParsed } : null}
               />
 

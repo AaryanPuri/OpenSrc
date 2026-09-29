@@ -5,7 +5,9 @@ import { useMediaQuery } from '../hooks/useMediaQuery';
 import { DOMAINS } from '../lib/dictionary';
 import { ALL_FIELDS as TILES } from '../lib/examples';
 import { domainFabric, fabricStyle } from '../lib/fabric';
+import { fieldIcon } from '../lib/fieldIcons';
 import { Composer } from './Composer';
+import { FieldBadge } from './FieldBadge';
 import { NeedleIcon } from './icons';
 
 interface Props {
@@ -115,9 +117,11 @@ function CollagePatch({
             </div>
           ) : (
             <div
-              className="relative h-full w-full overflow-hidden rounded-[14px] shadow-sticker ring-1 ring-black/10"
-              style={fabricStyle(domainFabric(p.id), 1.3)}
+              className="relative grid h-full w-full place-items-center overflow-hidden rounded-[14px] shadow-sticker ring-1 ring-black/10"
+              style={{ backgroundColor: domainFabric(p.id).color }}
             >
+              <span className="absolute inset-0 opacity-45" style={fabricStyle(domainFabric(p.id), 1.3)} />
+              <CollageIcon id={p.id} />
               <span
                 className="absolute bottom-2.5 left-2.5 rounded-[5px] bg-[#fdf9f1] px-1.5 py-0.5 text-[12px] font-semibold tracking-[0.04em] text-[#241d16] shadow-sm"
                 style={{ fontVariantCaps: 'all-small-caps' }}
@@ -129,6 +133,17 @@ function CollagePatch({
         </div>
       </motion.div>
     </motion.div>
+  );
+}
+
+function CollageIcon({ id }: { id: string }) {
+  const Icon = fieldIcon(id);
+  const ink = domainFabric(id).thread === 'light' ? 'text-white' : 'text-[#2a1d12]';
+  return (
+    <Icon
+      className={`relative -mt-3 h-9 w-9 ${ink} drop-shadow-[0_1px_2px_rgb(0_0_0/0.2)] sm:h-10 sm:w-10`}
+      strokeWidth={1.6}
+    />
   );
 }
 
@@ -197,10 +212,7 @@ export const Hero = forwardRef<HTMLTextAreaElement, Props>(function Hero(
       <div className="mx-auto grid max-w-6xl items-center gap-x-14 gap-y-10 px-4 pb-12 pt-8 sm:px-6 sm:pt-14 lg:grid-cols-[minmax(0,1fr)_340px] lg:pb-20 xl:grid-cols-[minmax(0,1fr)_380px]">
         <div className="min-w-0">
           <SelvageBand />
-          <p className="eyebrow flex items-center gap-3">
-            <span className="h-px w-8 bg-accent" aria-hidden="true" />
-            OpenSrc · an open-source issue finder
-          </p>
+          <p className="eyebrow">An open-source repository finder</p>
           <h1
             id="hero-title"
             className="mt-5 font-display text-[2.9rem] font-[560] leading-[0.95] tracking-[-0.035em] text-fg sm:text-[4.4rem] lg:text-[5rem]"
@@ -295,15 +307,7 @@ export function DomainQuilt({
                 className="tile group relative flex h-full min-h-16 w-full items-center gap-3 rounded-[14px] border border-line bg-surface/50 p-2.5 text-left transition-[background-color,border-color,box-shadow] duration-200 hover:border-line-strong hover:bg-surface hover:shadow-lift sm:p-3.5"
                 data-testid="domain-tile"
               >
-                <span
-                  className="relative h-11 w-11 shrink-0 overflow-hidden rounded-[10px] ring-1 ring-black/10 sm:h-14 sm:w-14"
-                  aria-hidden="true"
-                >
-                  <span
-                    className="absolute -inset-4 transition-transform duration-500 ease-out group-hover:translate-x-2 group-hover:translate-y-1.5 group-hover:rotate-3"
-                    style={fabricStyle(domainFabric(f.id), 0.9)}
-                  />
-                </span>
+                <FieldBadge id={f.id} size="lg" hoverShift />
                 <span className="min-w-0">
                   <span className="block font-display text-[16px] font-[560] leading-tight tracking-[-0.01em] text-fg sm:text-[17px]">
                     {def.label}
