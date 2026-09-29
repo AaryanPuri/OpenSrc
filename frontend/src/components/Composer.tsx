@@ -1,7 +1,8 @@
 import { motion } from 'framer-motion';
 import { ArrowRight, X } from 'lucide-react';
-import { forwardRef, useEffect, useId, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { forwardRef, useEffect, useId, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { useAutoDemo } from '../hooks/useAutoDemo';
+import { useIsomorphicLayoutEffect } from '../hooks/useIsomorphicLayoutEffect';
 import { rememberAiParse } from '../lib/aiParse';
 import { EXAMPLE_QUERIES } from '../lib/examples';
 import { getChips, parseQuery, removeChip, type Chip, type ParsedQuery } from '../lib/parseQuery';
@@ -60,7 +61,7 @@ export const Composer = forwardRef<HTMLTextAreaElement, Props>(function Composer
   useImperativeHandle(ref, () => input.current as HTMLTextAreaElement);
 
   // Auto-size: long queries wrap onto a second (or third) line instead of being cut off.
-  useLayoutEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     const el = input.current;
     if (!el) return;
     el.style.height = 'auto';

@@ -3,6 +3,8 @@ name: CI
 on:
   push:
   pull_request:
+  # Lets the nightly data job (collect.yml) start CI on its PR branch.
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -47,6 +49,9 @@ jobs:
 
       - name: Typecheck
         run: npm run typecheck
+
+      - name: Validate repo dataset (data/)
+        run: npm --prefix backend run validate-data
 
       - name: Test (frontend + shared parser, then backend)
         run: npm test

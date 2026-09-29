@@ -20,7 +20,17 @@ const SINCE_LABEL: Record<Since, string> = {
 /* Chips                                                               */
 /* ------------------------------------------------------------------ */
 
-export type ChipKind = 'difficulty' | 'language' | 'domain' | 'type' | 'activity' | 'recency' | 'keyword' | 'qualifier';
+export type ChipKind =
+  | 'difficulty'
+  | 'language'
+  | 'domain'
+  | 'type'
+  | 'activity'
+  | 'recency'
+  | 'keyword'
+  | 'qualifier'
+  /** Repo directory only: "fast maintainers". */
+  | 'response';
 
 /** Screen-reader / aria names for each kind of patch. */
 export const KIND_LABEL: Record<ChipKind, string> = {
@@ -32,6 +42,7 @@ export const KIND_LABEL: Record<ChipKind, string> = {
   recency: 'Opened',
   keyword: 'Keyword',
   qualifier: 'GitHub qualifier',
+  response: 'Maintainers',
 };
 
 export interface Chip {
@@ -41,6 +52,8 @@ export interface Chip {
   /** Short explanation of what this chip does to the GitHub query. */
   detail: string;
   color?: string;
+  /** Repo directory: set when the patch only narrows issues (a repo page's live issues), not repos. */
+  scope?: 'issues';
 }
 
 export function getChips(p: ParsedQuery): Chip[] {

@@ -10,6 +10,15 @@ export const EXAMPLE_QUERIES = [
   'c++ game engine bugs, help wanted',
 ];
 
+/** Example searches for the repo directory (typing demo + placeholder). */
+export const REPO_EXAMPLE_QUERIES = [
+  'beginner friendly rust repos',
+  'python machine learning projects',
+  'go devops tools with fast maintainers',
+  'typescript frontend libraries with help wanted',
+  'c++ game engines, committed this week',
+];
+
 /** Fields featured in the landing-page quilt, each with a starter query. */
 export const FEATURED: { id: string; query: string; hint: string }[] = [
   { id: 'databases', query: 'good first issues in databases', hint: 'Postgres, SQL, storage' },

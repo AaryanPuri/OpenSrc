@@ -1,9 +1,10 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { Bookmark, ExternalLink, Trash2, X } from 'lucide-react';
+import { Bookmark, ExternalLink, Star, Trash2, X } from 'lucide-react';
 import { useEffect, useRef } from 'react';
-import type { SavedIssue } from '../hooks/useSaved';
+import { Link } from 'react-router';
+import type { SavedIssue, SavedRepo } from '../hooks/useSaved';
 import { fabricFor, fabricStyle } from '../lib/fabric';
-import { plural, timeAgo } from '../lib/format';
+import { compactNumber, plural, timeAgo } from '../lib/format';
 import type { Issue } from '../lib/types';
 import { RepoAvatar } from './icons';
 
@@ -11,7 +12,9 @@ interface Props {
   open: boolean;
   onClose: () => void;
   saved: SavedIssue[];
+  savedRepos: SavedRepo[];
   onRemove: (i: Issue) => void;
+  onRemoveRepo: (fullName: string) => void;
   onClear: () => void;
 }
 
@@ -21,7 +24,8 @@ const item = {
   show: { x: 0, rotate: 0, transition: { type: 'spring' as const, stiffness: 420, damping: 30 } },
 };
 
-export function SavedDrawer({ open, onClose, saved, onRemove, onClear }: Props) {
+export function SavedDrawer({ open, onClose, saved, savedRepos, onRemove, onRemoveRepo, onClear }: Props) {
+  const total = saved.length + savedRepos.length;
   const panel = useRef<HTMLDivElement>(null);
   const closeBtn = useRef<HTMLButtonElement>(null);
   const restoreTo = useRef<HTMLElement | null>(null);
@@ -85,9 +89,9 @@ export function SavedDrawer({ open, onClose, saved, onRemove, onClear }: Props) 
               <h2 id="saved-title" className="font-display text-xl font-[560]">
                 Your shortlist
               </h2>
-              <span className="text-sm tabular-nums text-muted">{saved.length}</span>
+              <span className="text-sm tabular-nums text-muted">{total}</span>
               <div className="ml-auto flex items-center gap-1">
-                {saved.length > 0 && (
+                {total > 0 && (
                   <button type="button" className="btn-ghost text-xs" onClick={onClear}>
                     <Trash2 className="h-3.5 w-3.5" aria-hidden="true" /> Clear
                   </button>
@@ -97,7 +101,7 @@ export function SavedDrawer({ open, onClose, saved, onRemove, onClear }: Props) 
                   type="button"
                   className="icon-btn"
                   onClick={onClose}
-                  aria-label="Close saved issues"
+                  aria-label="Close saved items"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -105,65 +109,130 @@ export function SavedDrawer({ open, onClose, saved, onRemove, onClear }: Props) 
             </div>
 
             <div className="flex-1 overflow-y-auto p-4">
-              {saved.length === 0 ? (
+              {total === 0 ? (
                 <div className="flex h-full flex-col items-center justify-center px-8 text-center">
                   <span className="grid h-14 w-14 place-items-center rounded-[14px] border border-line-strong text-subtle">
                     <Bookmark className="h-5 w-5" aria-hidden="true" />
                   </span>
                   <p className="mt-4 font-display text-lg font-[560]">Nothing pinned yet</p>
                   <p className="mt-1 text-sm text-muted">
-                    Bookmark issues from your results to build a shortlist. They stay in this browser.
+                    Bookmark repos and issues to build a shortlist. They stay in this browser.
                   </p>
                 </div>
               ) : (
-                <motion.ul className="space-y-2.5" variants={list} initial="hidden" animate="show">
-                  <AnimatePresence initial={false}>
-                    {saved.map((i) => (
-                      <motion.li
-                        key={`${i.id}:${i.htmlUrl}`}
-                        layout
-                        variants={item}
-                        exit={{ x: 60, rotate: 6, opacity: 0, transition: { duration: 0.2 } }}
-                        className="paper relative overflow-hidden py-3 pl-6 pr-3"
-                        data-testid="saved-item"
-                      >
-                        <span
-                          aria-hidden="true"
-                          className="absolute inset-y-0 left-0 w-[6px]"
-                          style={fabricStyle(fabricFor(i.repo.fullName), 0.45)}
-                        />
-                        <div className="flex items-center gap-2 text-xs text-subtle">
-                          <RepoAvatar owner={i.repo.owner} size={16} offline={i.sample} />
-                          <span className="truncate">{i.repo.fullName}</span>
-                          <span className="ml-auto shrink-0">saved {timeAgo(i.savedAt)}</span>
-                        </div>
-                        <a
-                          href={i.htmlUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="mt-1.5 flex items-start gap-1.5 text-[15px] font-semibold leading-snug hover:text-accent"
-                        >
-                          <span className="flex-1">{i.title}</span>
-                          <ExternalLink className="mt-1 h-3.5 w-3.5 shrink-0 text-subtle" aria-hidden="true" />
-                        </a>
-                        <div className="mt-1 flex items-center justify-between">
-                          <span className="text-xs text-subtle">
-                            {plural(i.comments, 'comment')}
-                            {i.sample ? ' · sample' : ''}
-                          </span>
-                          <button
-                            type="button"
-                            className="min-h-11 rounded-md px-2 text-xs font-medium text-muted hover:bg-fg/[0.06] hover:text-fg sm:min-h-8"
-                            onClick={() => onRemove(i)}
-                            aria-label={`Remove “${i.title}”`}
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      </motion.li>
-                    ))}
-                  </AnimatePresence>
-                </motion.ul>
+                <div className="space-y-6">
+                  {savedRepos.length > 0 && (
+                    <section aria-labelledby="saved-repos-title">
+                      <h3 id="saved-repos-title" className="eyebrow mb-2">
+                        Repos <span className="tabular-nums">· {savedRepos.length}</span>
+                      </h3>
+                      <motion.ul className="space-y-2.5" variants={list} initial="hidden" animate="show">
+                        <AnimatePresence initial={false}>
+                          {savedRepos.map((r) => (
+                            <motion.li
+                              key={r.fullName}
+                              layout
+                              variants={item}
+                              exit={{ x: 60, rotate: 6, opacity: 0, transition: { duration: 0.2 } }}
+                              className="paper relative overflow-hidden py-3 pl-6 pr-3"
+                              data-testid="saved-repo"
+                            >
+                              <span
+                                aria-hidden="true"
+                                className="absolute inset-y-0 left-0 w-[6px]"
+                                style={fabricStyle(fabricFor(r.fullName), 0.45)}
+                              />
+                              <Link
+                                to={`/repo/${r.fullName}`}
+                                onClick={onClose}
+                                className="flex items-center gap-2 text-[15px] font-semibold leading-snug hover:text-accent"
+                              >
+                                <RepoAvatar owner={r.owner} size={20} />
+                                <span className="min-w-0 truncate">
+                                  <span className="font-normal text-subtle">{r.owner}/</span>
+                                  {r.fullName.slice(r.owner.length + 1)}
+                                </span>
+                              </Link>
+                              {r.description && (
+                                <p className="mt-1 line-clamp-2 text-[13px] leading-snug text-muted">{r.description}</p>
+                              )}
+                              <div className="mt-1 flex items-center gap-3 text-xs text-subtle">
+                                <span className="inline-flex items-center gap-1">
+                                  <Star className="h-3 w-3" aria-hidden="true" />
+                                  {compactNumber(r.stars)}
+                                </span>
+                                <span>{plural(r.goodFirstIssues, 'good first issue')}</span>
+                                <button
+                                  type="button"
+                                  className="ml-auto min-h-11 rounded-md px-2 text-xs font-medium text-muted hover:bg-fg/[0.06] hover:text-fg sm:min-h-8"
+                                  onClick={() => onRemoveRepo(r.fullName)}
+                                  aria-label={`Remove ${r.fullName}`}
+                                >
+                                  Remove
+                                </button>
+                              </div>
+                            </motion.li>
+                          ))}
+                        </AnimatePresence>
+                      </motion.ul>
+                    </section>
+                  )}
+                  {saved.length > 0 && (
+                    <section aria-labelledby="saved-issues-title">
+                      <h3 id="saved-issues-title" className="eyebrow mb-2">
+                        Issues <span className="tabular-nums">· {saved.length}</span>
+                      </h3>
+                      <motion.ul className="space-y-2.5" variants={list} initial="hidden" animate="show">
+                        <AnimatePresence initial={false}>
+                          {saved.map((i) => (
+                            <motion.li
+                              key={`${i.id}:${i.htmlUrl}`}
+                              layout
+                              variants={item}
+                              exit={{ x: 60, rotate: 6, opacity: 0, transition: { duration: 0.2 } }}
+                              className="paper relative overflow-hidden py-3 pl-6 pr-3"
+                              data-testid="saved-item"
+                            >
+                              <span
+                                aria-hidden="true"
+                                className="absolute inset-y-0 left-0 w-[6px]"
+                                style={fabricStyle(fabricFor(i.repo.fullName), 0.45)}
+                              />
+                              <div className="flex items-center gap-2 text-xs text-subtle">
+                                <RepoAvatar owner={i.repo.owner} size={16} offline={i.sample} />
+                                <span className="truncate">{i.repo.fullName}</span>
+                                <span className="ml-auto shrink-0">saved {timeAgo(i.savedAt)}</span>
+                              </div>
+                              <a
+                                href={i.htmlUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="mt-1.5 flex items-start gap-1.5 text-[15px] font-semibold leading-snug hover:text-accent"
+                              >
+                                <span className="flex-1">{i.title}</span>
+                                <ExternalLink className="mt-1 h-3.5 w-3.5 shrink-0 text-subtle" aria-hidden="true" />
+                              </a>
+                              <div className="mt-1 flex items-center justify-between">
+                                <span className="text-xs text-subtle">
+                                  {plural(i.comments, 'comment')}
+                                  {i.sample ? ' · sample' : ''}
+                                </span>
+                                <button
+                                  type="button"
+                                  className="min-h-11 rounded-md px-2 text-xs font-medium text-muted hover:bg-fg/[0.06] hover:text-fg sm:min-h-8"
+                                  onClick={() => onRemove(i)}
+                                  aria-label={`Remove “${i.title}”`}
+                                >
+                                  Remove
+                                </button>
+                              </div>
+                            </motion.li>
+                          ))}
+                        </AnimatePresence>
+                      </motion.ul>
+                    </section>
+                  )}
+                </div>
               )}
             </div>
           </motion.div>

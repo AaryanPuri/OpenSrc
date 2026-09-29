@@ -3,15 +3,23 @@ import '@fontsource-variable/fraunces/full-italic.css';
 import '@fontsource-variable/instrument-sans';
 import '@fontsource-variable/jetbrains-mono';
 import { StrictMode } from 'react';
-import { createRoot } from 'react-dom/client';
-import App from './App';
+import { createRoot, hydrateRoot } from 'react-dom/client';
+import { BrowserRouter } from 'react-router';
 import './index.css';
 import { migrateStorage } from './lib/storage';
+import { AppRoutes } from './routes';
 
 migrateStorage();
 
-createRoot(document.getElementById('root')!).render(
+const app = (
   <StrictMode>
-    <App />
-  </StrictMode>,
+    <BrowserRouter>
+      <AppRoutes />
+    </BrowserRouter>
+  </StrictMode>
 );
+
+const root = document.getElementById('root')!;
+// Pre-rendered pages arrive with markup to hydrate; the plain index.html has an empty #root.
+if (root.hasChildNodes()) hydrateRoot(root, app);
+else createRoot(root).render(app);

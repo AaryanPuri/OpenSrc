@@ -1,0 +1,48 @@
+# Hand edits on top of the nightly collection (backend/src/pipeline/).
+#
+# Anyone can open a pull request against this file:
+#   include  repos that should always be listed. They are fetched every night even
+#            if the automatic search misses them, and the 30-star floor is waived.
+#            Every other gate still applies: a license, a commit in the last 180 days,
+#            at least 2 open good-first-issue or help-wanted issues, not archived,
+#            not a fork or mirror.
+#   exclude  repos that must never be listed (spam, abandoned, asked to be removed).
+#            Please give a reason.
+#   fields   field overrides when the automatic classification is wrong: up to 3 ids
+#            from shared/dictionary.ts DOMAINS (databases, ml, data-science, frontend,
+#            backend, devops, security, gamedev, blockchain, mobile, compilers, cli,
+#            accessibility, docs-tooling, testing, networking, embedded, systems,
+#            graphics, devtools, observability, science).
+#
+# Entries are "owner/name" exactly as on GitHub. An include can carry its own
+# fields: `- { repo: owner/name, fields: [cli] }`. CI checks this file with
+# `npm --prefix backend run validate-data`; the change shows up after the next
+# nightly run (or run `npm --prefix backend run collect -- --only owner/name`).
+
+include:
+  - uutils/coreutils
+  - rust-lang/rust
+  - astral-sh/ruff
+  - nushell/nushell
+  - helix-editor/helix
+  - pola-rs/polars
+  - python/mypy
+  - scikit-learn/scikit-learn
+  - sympy/sympy
+  - TheAlgorithms/Python
+  - home-assistant/core
+  - zulip/zulip
+  - oppia/oppia
+  - getsentry/sentry
+  - PostHog/posthog
+  - freeCodeCamp/freeCodeCamp
+  - mdn/content
+  - excalidraw/excalidraw
+  - microsoft/vscode
+  - appwrite/appwrite
+  - kubernetes/kubernetes
+  - godotengine/godot
+
+exclude: []
+
+fields: {}

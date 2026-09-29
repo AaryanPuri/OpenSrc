@@ -1,0 +1,102 @@
+# Nightly repo-directory data update (backend/src/pipeline/).
+#
+# One-time setup in the repo's settings:
+#   1. Settings > Actions > General > Workflow permissions: tick
+#      "Allow GitHub Actions to create and approve pull requests".
+#   2. Settings > Secrets and variables > Actions: add a COLLECTOR_TOKEN secret, a token that can
+#      read public repos (a fine-grained PAT with no extra permissions is enough). Without it the
+#      job falls back to github.token, whose GraphQL budget (1,000 points an hour) is too small
+#      for a full run; the collector then stops cleanly and no PR is opened.
+#
+# Each run opens (or updates) one PR from the data/nightly branch. Review it and merge it yourself.
+# No PR is opened when the collector stops early, validation fails or the list shrinks by >20%.
+name: Nightly data
+
+on:
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+    inputs:
+      args:
+        description: 'Extra collector flags, e.g. --limit 300'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+  pull-requests: write
+  # To start CI on the PR branch (pushes made with github.token don't trigger workflows).
+  actions: write
+
+concurrency:
+  group: nightly-data
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    name: Collect, validate, open PR
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install (backend)
+        run: npm ci
+        working-directory: backend
+
+      - name: Remember the current dataset
+        run: |
+          mkdir -p "$RUNNER_TEMP/before"
+          if [ -f data/repos.json ]; then cp data/repos.json "$RUNNER_TEMP/before/repos.json"; else echo '[]' > "$RUNNER_TEMP/before/repos.json"; fi
+          echo "BEFORE_COUNT=$(node -p "require(process.env.RUNNER_TEMP + '/before/repos.json').length")" >> "$GITHUB_ENV"
+          echo "RUN_DATE=$(date -u +%Y-%m-%d)" >> "$GITHUB_ENV"
+
+      - name: Collect
+        env:
+          COLLECTOR_TOKEN: ${{ secrets.COLLECTOR_TOKEN || github.token }}
+          EXTRA_ARGS: ${{ inputs.args }}
+        # Exit code 2 = stopped at the rate-limit floor; nothing was written.
+        run: npm --prefix backend run collect -- $EXTRA_ARGS
+
+      - name: Validate
+        run: npm --prefix backend run validate-data
+
+      - name: Stop if the list shrank by more than 20%
+        run: |
+          after=$(node -p "require('./data/repos.json').length")
+          echo "Repos: $BEFORE_COUNT -> $after"
+          if [ "$BEFORE_COUNT" -gt 0 ] && [ $((after * 100)) -lt $((BEFORE_COUNT * 80)) ]; then
+            echo "::error::The dataset shrank by more than 20% ($BEFORE_COUNT -> $after). Not opening a PR."
+            exit 1
+          fi
+
+      - name: Write the PR summary
+        working-directory: backend
+        run: npx tsx src/pipeline/cli.ts summary --base "$RUNNER_TEMP/before/repos.json" > "$RUNNER_TEMP/pr-body.md"
+
+      - name: Open or update the PR
+        id: cpr
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: data/nightly
+          delete-branch: true
+          add-paths: |
+            data/repos.json
+            data/meta.json
+          commit-message: 'Nightly dataset update (${{ env.RUN_DATE }})'
+          title: 'Nightly dataset update (${{ env.RUN_DATE }})'
+          body-path: ${{ runner.temp }}/pr-body.md
+          committer: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
+          author: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
+
+      - name: Start CI on the PR branch
+        if: steps.cpr.outputs.pull-request-number && steps.cpr.outputs.pull-request-operation != 'none'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run ci.yml --ref data/nightly --repo "$GITHUB_REPOSITORY"

@@ -1,6 +1,8 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { Bookmark } from 'lucide-react';
-import { forwardRef, useEffect, useState } from 'react';
+import { Bookmark, Menu, X } from 'lucide-react';
+import { forwardRef, useEffect, useId, useState } from 'react';
+import { NavLink, useLocation } from 'react-router';
+import { useHydrated } from '../hooks/useHydrated';
 import type { Theme } from '../hooks/useTheme';
 import { LogoMark, ThemeGlyph } from './icons';
 import { SettingsPopover } from './SettingsPopover';
@@ -30,9 +32,47 @@ export function Wordmark({ className = '' }: { className?: string }) {
   );
 }
 
+const NAV = [
+  { to: '/', label: 'Directory', end: true },
+  { to: '/collections', label: 'Collections', end: false },
+  { to: '/issues', label: 'Search issues', end: false },
+  { to: '/submit', label: 'Submit', end: false },
+];
+
+/** "/" is also active on the directory's field pages, which are the directory with a field picked. */
+const isDirectory = (path: string) => path === '/' || path.startsWith('/field/') || path.startsWith('/repo/');
+
+function NavItems({ vertical, onNavigate }: { vertical?: boolean; onNavigate?: () => void }) {
+  const { pathname } = useLocation();
+  return (
+    <ul className={vertical ? 'flex flex-col py-2' : 'flex items-center gap-0.5'}>
+      {NAV.map((n) => (
+        <li key={n.to}>
+          <NavLink
+            to={n.to}
+            end={n.end}
+            onClick={onNavigate}
+            className={({ isActive }) => {
+              const active = n.to === '/' ? isDirectory(pathname) : isActive;
+              return `nav-link ${vertical ? 'flex h-12 items-center px-4 text-[15px]' : 'inline-flex h-9 items-center px-3 text-[14px]'} ${active ? 'is-active text-fg' : 'text-muted hover:text-fg'}`;
+            }}
+          >
+            {n.label}
+          </NavLink>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 /** The Saved button is a forwardRef so bookmarked patches can fly to it. */
 export const Header = forwardRef<HTMLButtonElement, Props>(function Header(props, savedRef) {
+  const hydrated = useHydrated();
   const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuId = useId();
+  const { pathname } = useLocation();
+  useEffect(() => setMenuOpen(false), [pathname]);
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
     onScroll();
@@ -43,7 +83,7 @@ export const Header = forwardRef<HTMLButtonElement, Props>(function Header(props
   return (
     <header
       className={`sticky top-0 z-40 transition-[background-color,border-color] duration-300 ${
-        scrolled ? 'seam-b bg-bg/85 backdrop-blur-md' : 'border-b border-transparent'
+        scrolled || menuOpen ? 'seam-b bg-bg/85 backdrop-blur-md' : 'border-b border-transparent'
       }`}
     >
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-1 px-4 sm:px-6">
@@ -67,6 +107,10 @@ export const Header = forwardRef<HTMLButtonElement, Props>(function Header(props
           </motion.span>
           <Wordmark />
         </a>
+
+        <nav aria-label="Main" className="ml-6 hidden lg:block">
+          <NavItems />
+        </nav>
 
         <div className="ml-auto flex items-center gap-0.5 sm:gap-1">
           <button
@@ -98,10 +142,13 @@ export const Header = forwardRef<HTMLButtonElement, Props>(function Header(props
             type="button"
             className="icon-btn"
             onClick={props.onToggleTheme}
-            aria-label={`Switch to ${props.theme === 'dark' ? 'light' : 'dark'} mode`}
+            aria-label={hydrated ? `Switch to ${props.theme === 'dark' ? 'light' : 'dark'} mode` : 'Switch theme'}
             data-testid="theme-toggle"
           >
-            <ThemeGlyph dark={props.theme === 'dark'} />
+            {/* The server can't know the theme, so the glyph stays hidden until hydrated. */}
+            <span className={`grid place-items-center transition-opacity ${hydrated ? '' : 'opacity-0'}`}>
+              <ThemeGlyph dark={props.theme === 'dark'} />
+            </span>
           </button>
           <SettingsPopover
             token={props.token}
@@ -111,8 +158,36 @@ export const Header = forwardRef<HTMLButtonElement, Props>(function Header(props
             open={props.settingsOpen}
             onOpenChange={props.onSettingsOpenChange}
           />
+          <button
+            type="button"
+            className="icon-btn lg:hidden"
+            aria-expanded={menuOpen}
+            aria-controls={menuId}
+            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+            onClick={() => setMenuOpen((o) => !o)}
+            data-testid="menu-button"
+          >
+            {menuOpen ? <X className="h-[18px] w-[18px]" /> : <Menu className="h-[18px] w-[18px]" />}
+          </button>
         </div>
       </div>
+      <AnimatePresence initial={false}>
+        {menuOpen && (
+          <motion.nav
+            id={menuId}
+            aria-label="Main"
+            initial={{ height: 0 }}
+            animate={{ height: 'auto' }}
+            exit={{ height: 0 }}
+            transition={{ duration: 0.22, ease: [0.2, 0.7, 0.2, 1] }}
+            className="overflow-hidden lg:hidden"
+          >
+            <div className="seam-t mx-auto max-w-6xl px-2">
+              <NavItems vertical onNavigate={() => setMenuOpen(false)} />
+            </div>
+          </motion.nav>
+        )}
+      </AnimatePresence>
     </header>
   );
 });

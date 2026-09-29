@@ -265,6 +265,32 @@ function apply(result: ParsedQuery, entry: Entry, phrase: string) {
   }
 }
 
+/**
+ * Domains named in already-normalised tokens (see `normalise`), using the same
+ * greedy longest-phrase match as parseQuery. Phrases that belong to a language,
+ * difficulty or issue type are consumed without producing a domain, exactly as
+ * in a query. Used to classify repos from their descriptions and topics.
+ */
+export function matchDomains(tokens: string[]): DomainMatch[] {
+  const found: DomainMatch[] = [];
+  let i = 0;
+  while (i < tokens.length) {
+    let step = 1;
+    for (let n = Math.min(MAX_PHRASE, tokens.length - i); n >= 1; n--) {
+      const span = tokens.slice(i, i + n);
+      const entry = lookup(span);
+      if (!entry) continue;
+      if (entry.kind === 'domain' && !found.some((d) => d.id === entry.def.id)) {
+        found.push(makeDomainMatch(entry.def, span.join(' ')));
+      }
+      step = n;
+      break;
+    }
+    i += step;
+  }
+  return found;
+}
+
 export function makeDomainMatch(def: DomainDef, phrase: string): DomainMatch {
   const specific = def.specific?.find((s) => s === phrase || s === normalise(phrase).map(singular).join(' '));
   const term = specific ? (specific.includes(' ') ? `"${specific}"` : specific) : def.term;

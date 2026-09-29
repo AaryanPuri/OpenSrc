@@ -6,6 +6,7 @@
 export const KEYS = {
   theme: 'opensrc:theme',
   saved: 'opensrc:saved',
+  savedRepos: 'opensrc:saved-repos',
   token: 'opensrc:token',
 } as const;
 

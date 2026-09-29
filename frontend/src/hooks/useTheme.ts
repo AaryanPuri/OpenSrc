@@ -1,27 +1,21 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { flushSync } from 'react-dom';
 import { KEYS } from '../lib/storage';
 import { useLocalStorage } from './useLocalStorage';
+import { useMediaQuery } from './useMediaQuery';
 
 export type Theme = 'dark' | 'light';
 
-const media = () => window.matchMedia?.('(prefers-color-scheme: light)');
-
 type DocWithVT = Document & { startViewTransition?: (cb: () => void) => unknown };
 
-/** Light (paper) by default when the OS is light, night quilt when dark; persists a manual pick. */
+/**
+ * Light (paper) by default when the OS is light, night quilt when dark; persists a manual pick.
+ * On the server this reports 'dark'. The inline script in index.html sets the real
+ * data-theme before first paint, and the Header keeps its theme glyph neutral until hydrated.
+ */
 export function useTheme() {
   const [stored, setStored] = useLocalStorage<Theme | null>(KEYS.theme, null);
-  const [system, setSystem] = useState<Theme>(() => (media()?.matches ? 'light' : 'dark'));
-
-  useEffect(() => {
-    const m = media();
-    if (!m) return;
-    const onChange = () => setSystem(m.matches ? 'light' : 'dark');
-    m.addEventListener('change', onChange);
-    return () => m.removeEventListener('change', onChange);
-  }, []);
-
+  const system: Theme = useMediaQuery('(prefers-color-scheme: light)') ? 'light' : 'dark';
   const theme: Theme = stored ?? system;
 
   useEffect(() => {
