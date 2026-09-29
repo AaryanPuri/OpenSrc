@@ -1,145 +1,210 @@
-# OpenSrc: stitch yourself into open source
+<div align="center">
 
-Describe the open-source work you want in plain language, for example _"beginner friendly rust issues in databases"_ or _"easy go issues for kubernetes tooling"_. OpenSrc turns that into a precise GitHub issue search and shows open, unassigned issues you can pick up.
+<img src="frontend/public/favicon.svg" alt="OpenSrc logo" width="72" height="72" />
 
-The design language is a quilt. Every field (domain) is a fabric patch with its own colour and weave. Your query is "sewn" into patches as you type, and each result is a patch in the quilt.
+# OpenSrc
+
+**Find a repo that wants _your patch_.**
+
+A free directory of open-source projects that are genuinely ready for new contributors,<br />
+scored on how welcoming they are to a first pull request.
+
+[**opensrc.studio**](https://opensrc.studio) · [Submit a repo](https://opensrc.studio/submit) · [Contributing](CONTRIBUTING.md) · [Report a problem](https://github.com/AaryanPuri/OpenSrc/issues)
+
+[![CI](https://github.com/AaryanPuri/OpenSrc/actions/workflows/ci.yml/badge.svg)](https://github.com/AaryanPuri/OpenSrc/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-c0392b.svg)](LICENSE)
+[![Repos listed](https://img.shields.io/badge/repos%20listed-1%2C489-3e5c9a.svg)](https://opensrc.studio)
+[![PRs welcome](https://img.shields.io/badge/PRs-welcome-3f7650.svg)](CONTRIBUTING.md)
+
+<br />
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/home-dark.png" />
+  <img src="docs/images/home-light.png" alt="The OpenSrc home page: a plain-language search box above a quilt of field patches" width="900" />
+</picture>
+
+</div>
+
+---
+
+## Contents
+
+- [What is OpenSrc?](#what-is-opensrc)
+- [Features](#features)
+- [How repos are scored](#how-repos-are-scored)
+- [How repos get listed](#how-repos-get-listed)
+- [Run it locally](#run-it-locally)
+- [Tech stack](#tech-stack)
+- [Project structure](#project-structure)
+- [Contributing](#contributing)
+- [License](#license)
+
+---
+
+## What is OpenSrc?
+
+Finding a place for your first open-source contribution is harder than it should be. Plenty of repos have a `good first issue` label, but the issues are already claimed, the maintainers never reply, or the project has been quiet for a year.
+
+OpenSrc checks that for you. Every night it scans GitHub for active projects with open beginner issues, scores how welcoming each one is, and lists the best of them in one searchable directory.
+
+- **For first-timers:** find a project with unclaimed good first issues, a CONTRIBUTING guide, and maintainers who actually reply.
+- **For language-focused contributors:** browse by language or field and jump straight to live, open issues.
+- **Free, with no paid listings:** a repo is listed because it scores well, not because anyone paid.
+
+---
 
 ## Features
 
-- **Natural-language query parser** (`shared/`, the same code on the frontend and the server):
-  - Detects languages (31, with aliases like `golang`, `py`, `c++`, `.net`), 22 fields, difficulty, kind of work and leftover keywords.
-  - Understands activity phrases: "fewer than 5 comments" / "no comments" / "unanswered" become `comments:<N` / `comments:0`, and "recent" / "this week" / "this month" become `created:>DATE`.
-  - Builds a GitHub query such as `is:issue is:open no:assignee archived:false label:"good first issue" language:rust database`.
-- **Claude reading (optional)**: when the API server has an `ANTHROPIC_API_KEY`, a submitted query is also read by Claude (`/api/parse`). The local parse is shown instantly, and Claude's reading replaces it if it arrives within 4s. A small sparkle next to "We read that as" marks it. With no server, no key, an error or a slow answer, the local parse simply stays.
-- **Live patches**: as you type (debounced), the query is parsed and sewn into removable patches attached to the search bar. On an idle landing page an auto-typing demo shows this, and it stops on your first interaction.
-- **"How much time do you have?"**: An hour / A weekend / Ongoing map to a difficulty and kind of work. Difficulty is in plain words: First contribution, Some experience, Ready for a challenge.
-- **Refine**: a compact, sticky sidebar (a disclosure on mobile) for difficulty, kind of work, language and field. Sort by best match, newest or fewest comments. Load more.
-- **Result cards**, with a clear hierarchy:
-  - title and issue number;
-  - a one-line "why this fits you" with an approachability score;
-  - the repo with stars and a trust badge (last update, amber when stale for more than 6 months);
-  - meta (language, comments, age) and up to 3 labels.
-- **Rate-limit resilience**: on 403/429 or network failure the app falls back to a bundled sample dataset (`frontend/src/data/fixtures.json`), announced by one slim, dismissible notice.
-- **Shareable URLs**: `?q=…&sort=…`. Editing a patch or filter rewrites `q`, so the URL is always the source of truth. `?demo=1` forces sample data. Unpicking the last patch keeps you on the results page (`?q=`) with a "pick a patch to start" state.
-- **Saved issues**: bookmark issues (a patch flies to the Saved button) into a drawer, stored in localStorage (`opensrc:*` keys; old `ocf:*` keys are migrated).
-- **Settings**: an optional GitHub token (localStorage only) raises the search limit to 30/min and enables repo star counts. There is also a sample-data toggle.
-- **Design**:
-  - Warm paper-and-ink light mode and an indigo "night quilt" dark mode, which follow `prefers-color-scheme` and remember your choice.
-  - The theme switch crossfades using the View Transitions API.
-  - Fonts: Fraunces (display), Instrument Sans (UI), JetBrains Mono (keyboard hints).
-  - Motion via framer-motion, with a full `prefers-reduced-motion` fallback. Content is never hidden behind an entrance animation.
-  - AA contrast and 44px touch targets on mobile.
-- **Keyboard**: `/` focuses search, `Enter` searches, `Esc` closes overlays.
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <h3>🧵 Search in plain words</h3>
+      <p>Type <em>"beginner friendly rust repos"</em> or <em>"go devops tools with fast maintainers"</em>. OpenSrc shows how it read you as removable patches (language, field, difficulty), and you refine by unpicking them.</p>
+      <img src="docs/images/search.png" alt="Search results for beginner friendly rust repos, with patches and repo cards" />
+    </td>
+    <td width="50%" valign="top">
+      <h3>📋 A page for every repo</h3>
+      <p>Facts, a <strong>"why this score"</strong> breakdown, three "Start here" links, and <strong>live, unassigned issues</strong> straight from GitHub in Good first / Help wanted / All tabs.</p>
+      <img src="docs/images/repo.png" alt="The FreeCAD repo page with Start here links, live issues and facts" />
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <h3>🗂️ Collections</h3>
+      <p>Best for a first PR · Fresh this week · Unanswered issues · Big-name repos · Fast responders. One click for where you are right now.</p>
+      <img src="docs/images/collections.png" alt="The collections page with five quilt-patch collection cards" />
+    </td>
+    <td width="50%" valign="top">
+      <h3>✨ Also</h3>
+      <ul>
+        <li><strong>Browse by language and field:</strong> 31 languages and 22 fields, each with its own page.</li>
+        <li><strong>Save repos and issues</strong> to come back to later.</li>
+        <li><strong>Issue search</strong> across all of GitHub at <code>/issues</code>.</li>
+        <li><strong>Fast and indexable:</strong> every page is pre-rendered HTML, with a sitemap and an RSS feed.</li>
+        <li><strong>Light and dark</strong> themes, keyboard shortcuts (<kbd>/</kbd> to search), reduced-motion support and AA contrast.</li>
+      </ul>
+    </td>
+  </tr>
+</table>
 
-## Layout
+---
 
-```
-frontend/   Vite + React + Tailwind UI           (its own package.json)
-backend/    Hono API server (Node or Workers)    (its own package.json)
-shared/     query parser used by both halves     (plain TypeScript, no DOM/Node APIs)
-```
+## How repos are scored
 
-The root `package.json` only holds repo-wide tooling (ESLint, Prettier, concurrently) and scripts that drive both halves.
+Every listed repo gets a **contributor-friendliness score from 0 to 100**, rebuilt nightly from GitHub data.
 
-## Run
+| Part                    | Weight | What it measures                                               |
+| :---------------------- | -----: | :------------------------------------------------------------- |
+| **Issues to pick from** |     25 | Open good-first-issues (plus some help-wanted), on a log scale |
+| **Recent activity**     |     20 | How recently the default branch saw a commit                   |
+| **Maintainer replies**  |     15 | Median time for a maintainer to first reply to a new issue     |
+| **Onboarding**          |     15 | CONTRIBUTING guide, code of conduct, a clear description       |
+| **Up for grabs**        |     15 | Share of good first issues that are still unassigned           |
+| **Reach**               |     10 | Stars, damped so big names don't dominate                      |
+
+A repo is marked **🪡 First-PR friendly** when it scores **60 or more**, has **at least 3 good first issues**, has a **CONTRIBUTING guide**, and maintainers reply **within 3 days** (or there isn't enough data yet).
+
+<details>
+<summary><strong>What keeps a repo out of the directory</strong></summary>
+
+<br />
+
+A repo isn't listed if it is archived, a fork or a mirror; has no license; has had no commit in the last 180 days; has fewer than 2 open good-first-issue or help-wanted issues; or has fewer than 30 stars (unless it was added by hand). The formula lives in [`shared/score.ts`](shared/score.ts).
+
+</details>
+
+---
+
+## How repos get listed
+
+1. **Automatically, every night.** A [GitHub Action](.github/workflows/collect.yml) searches GitHub for active repos with good first issues in every supported language, scores them, and opens a pull request with the updated dataset. A maintainer reviews and merges it.
+2. **By suggestion.** Know a welcoming project we missed? Use **[Submit a repo](https://opensrc.studio/submit)**. It checks the repo against the same rules before you file it.
+3. **By hand.** Force-include, exclude or re-categorise a repo by editing [`data/curation.yml`](data/curation.yml) in a pull request.
+
+Something wrong with a listing? Every repo page has a **Flag this repo** link.
+
+---
+
+## Run it locally
+
+You need **Node.js 20+**.
 
 ```bash
-npm run setup         # install root tooling + frontend + backend (once)
-cp backend/.env.example backend/.env   # optional: ANTHROPIC_API_KEY, GITHUB_TOKEN
-npm run dev           # web on http://localhost:5173 + API on :8787, together
-npm test              # frontend + shared parser tests, then backend tests
-npm run build         # build frontend (frontend/dist) and backend (backend/dist)
-npm run lint          # ESLint over frontend/, backend/ and shared/
-npm run format        # Prettier (format:check verifies only; CI runs it)
-npm start             # production: build both, then ONE Node server for UI + API
+git clone https://github.com/AaryanPuri/OpenSrc.git
+cd OpenSrc
+npm run setup   # install root tooling, frontend and backend
+npm run dev     # web on http://localhost:5173 · API on http://localhost:8787
 ```
 
-Run one half on its own with `npm run dev:frontend` (searches then go straight to GitHub from the browser) or `npm run dev:backend`.
+<details>
+<summary><strong>Optional environment variables</strong></summary>
 
-**Ports.** The defaults are web on 5173 and API on 8787. To run a second copy alongside:
+<br />
 
-```bash
-WEB_PORT=5180 PORT=8788 API_PROXY_TARGET=http://127.0.0.1:8788 npm run dev
-```
+Copy `backend/.env.example` to `backend/.env`. Everything works without these.
 
-- `WEB_PORT` sets Vite's port. It uses a strict port, so it fails rather than silently switching.
-- `PORT` is the API server's port.
-- `API_PROXY_TARGET` is where Vite's `/api` proxy points. The default is `http://127.0.0.1:8787`.
+| Variable            | What it enables                                                                             |
+| :------------------ | :------------------------------------------------------------------------------------------ |
+| `GITHUB_TOKEN`      | Higher GitHub rate limits for live issues (30 searches/min instead of 10)                   |
+| `ANTHROPIC_API_KEY` | Claude reads free-text searches more accurately; falls back to the built-in rules parser    |
+| `SITE_URL`          | The production URL used for canonical links and the sitemap (e.g. `https://opensrc.studio`) |
+| `COLLECTOR_TOKEN`   | _(GitHub Actions secret)_ A read-only token for the nightly collector                       |
 
-**Production (`npm start`).** This builds the frontend into `frontend/dist/`, compiles `backend/`, and runs the backend with `NODE_ENV=production`. That one process serves:
+</details>
 
-- the API under `/api/*`;
-- the built frontend from `frontend/dist/`, with long-lived caching for the hashed `/assets/*` files;
-- `index.html` for any other extension-less path, so client-side routes work.
+<details>
+<summary><strong>All scripts</strong></summary>
 
-Unknown `/api/*` paths still return JSON 404s. It listens on `PORT` (default 8787). `SERVE_STATIC=<dir>` serves a different build folder, and `SERVE_STATIC=off` turns static serving off. The Cloudflare Worker entry (`backend/src/app.ts`) isn't affected.
+<br />
 
-**CI.** `.github/workflows/ci.yml` runs on every push and PR with Node 20: `npm ci` for root, frontend and backend, then format check, lint, typecheck, test and build.
+| Command                                 | What it does                                                      |
+| :-------------------------------------- | :---------------------------------------------------------------- |
+| `npm run dev`                           | Run the frontend and backend together with hot reload             |
+| `npm run build`                         | Build the frontend (with every page pre-rendered) and the backend |
+| `npm start`                             | Build, then serve the site and API from one Node server           |
+| `npm test`                              | Frontend, shared and backend tests (Vitest)                       |
+| `npm run typecheck` / `lint` / `format` | TypeScript, ESLint and Prettier                                   |
+| `npm --prefix backend run collect`      | Run the repo collector locally (needs `GITHUB_TOKEN`)             |
 
-### One parser (`shared/`)
+More detail: [`backend/README.md`](backend/README.md) (API and collector), [`docs/seo-and-prerender.md`](docs/seo-and-prerender.md) (pre-rendering) and [`docs/architecture.md`](docs/architecture.md) (parser and search internals).
 
-`shared/` holds the dictionary, the rules parser, the GitHub query builder and the shared types. It is plain TypeScript: an ESLint rule forbids DOM and Node APIs there.
+</details>
 
-- The frontend imports it through `frontend/src/lib/dictionary.ts` and `frontend/src/lib/parseQuery.ts`, which re-export it and add the UI-only chip helpers.
-- The backend compiles it alongside itself (`rootDir: ".."`), so the same text gives the same filters and the same GitHub query on both sides.
-- Its tests (`shared/parse.test.ts`) run once, with the frontend tests.
+---
 
-**Claude parsing and the URL.**
+## Tech stack
 
-- `?q=` stays the source of truth. When Claude's reading is applied, the GitHub query built from it is what gets searched.
-- Editing a patch rewrites `q` with `toQueryText(parse)`. That text round-trips through the local parser, so the edited query reloads the same without the server. The edit is also remembered as Claude's for the session, so the sparkle stays.
-- See `frontend/src/lib/aiParse.ts` and `frontend/src/hooks/useAiParse.ts`.
+| Layer         | Tools                                                                                    |
+| :------------ | :--------------------------------------------------------------------------------------- |
+| **Frontend**  | React 18, TypeScript, Vite, Tailwind CSS, Framer Motion, React Router, Lucide icons      |
+| **Rendering** | Build-time pre-rendering with React server rendering, then client hydration              |
+| **Backend**   | Hono (Node or Cloudflare Workers), GitHub REST and GraphQL APIs, optional Claude parsing |
+| **Data**      | A nightly collector on GitHub Actions writing a versioned JSON dataset                   |
+| **Quality**   | Vitest, ESLint, Prettier and GitHub Actions CI                                           |
+| **Hosting**   | Cloudflare                                                                               |
 
-### Backend (`backend/`)
+---
 
-`backend/` is a small Hono API (see `backend/README.md`). In development, Vite proxies `/api` to `http://127.0.0.1:8787`. Put a `GITHUB_TOKEN` in `backend/.env` to raise the shared rate limit to 30 searches/min and get repo star counts on every card.
-
-How `searchIssues` in `frontend/src/lib/search.ts` picks a path:
-
-1. **Demo mode** (`?demo=1` or the Settings toggle) stays fully local and never touches the network.
-2. **Server first.** The frontend still parses the text itself and sends the finished GitHub query as `/api/search?gq=…&page=&sort=`. The server runs that exact query with its own token and a 5-minute cache. If the server hits GitHub's rate limit or can't reach GitHub, it replies `source: "fixtures"`, and the app shows the bundled sample issues with the server's `warning` as the notice.
-3. **Direct GitHub fallback.** The browser calls `api.github.com` itself in these cases:
-   - The server isn't there: a 404, a non-JSON reply (e.g. static hosting or the proxy with the server stopped), or a network error. This is remembered for the rest of the page session, so the server isn't probed on every search.
-   - The server returns a transient 5xx. That request goes direct, and the next one tries the server again.
-   - **You added your own token in Settings.** Your token is only ever sent directly to GitHub.
-
-Page size is 20 on both sides (`PAGE_SIZE` in `search.ts`, `PER_PAGE` in the server).
-
-## Structure
+## Project structure
 
 ```
-shared/                 used by both halves (no DOM/Node APIs)
-  types.ts              ParsedQuery, DomainMatch, Difficulty, IssueType, Since
-  dictionary.ts         languages, domains, difficulty, types, stopwords
-  parse.ts              rules parser, GitHub query builder, toQueryText round-trip
-frontend/
-  index.html, vite.config.ts, tailwind.config.js
-  public/               favicon
-  src/
-    lib/
-      dictionary.ts     re-exports shared/dictionary
-      parseQuery.ts     re-exports shared/parse + chip helpers and refine toggles
-      aiParse.ts        optional Claude reading via /api/parse (health check, 4s deadline, cache)
-      examples.ts       example queries and featured fields
-      search.ts         searchIssues(q, opts): /api/search first, direct GitHub fallback
-      fixtures.ts       sample-data search with GitHub-like semantics
-      format.ts         time-ago, label colours, approachability, plural(), activity()
-      fabric.ts         the 22 field fabrics (colour + CSS-gradient weave)
-      fit.ts            "why this fits you" reasons for a card
-      presets.ts        "How much time do you have?" presets
-      storage.ts        localStorage keys + ocf:* → opensrc:* migration
-    data/fixtures.json  32 sample issues
-    hooks/              URL state, search (race-safe load more), AI parse, theme, saved, auto-typing demo
-    components/         Header, Hero (+ DomainQuilt), Composer (search + patches), Patches,
-                        RefinePanel, IssueCard, ResultStates, SavedDrawer, SettingsPopover
-backend/
-  src/                  app.ts (routes), node.ts (Node entry), parse/ (LLM + rules), github/ (client, cache, linked PRs)
-  test/                 vitest suites
+OpenSrc/
+├── frontend/     React app, pages, components, and the pre-render script
+├── backend/      Hono API server and the nightly repo collector (src/pipeline)
+├── shared/       Query parser, score, filters and collections, used by both halves
+├── data/         repos.json (generated nightly) and curation.yml (hand-edited)
+├── docs/         Extra documentation and README images
+└── .github/      CI, the nightly collector workflow, and issue forms
 ```
 
-`frontend/src/lib/search.ts` is the only frontend module that talks to the network: it calls the `/api/search` backend first and GitHub directly as a fallback. Callers depend only on `searchIssues(q, opts)` and the `SearchResult` shape.
+---
 
-## Notes
+## Contributing
 
-- GitHub issue search does not support `topic:`, so a domain becomes a free-text term (for example "kubernetes" or "database"). The related topics are still shown in the chip tooltip.
-- Sample issues link to the real repository's issue list, not to specific issues.
+Contributions of every size are welcome, and OpenSrc is a good place to make your first one. Read **[CONTRIBUTING.md](CONTRIBUTING.md)** to get set up, then pick an issue labelled [`good first issue`](https://github.com/AaryanPuri/OpenSrc/labels/good%20first%20issue).
+
+Questions or ideas? Open an [issue](https://github.com/AaryanPuri/OpenSrc/issues) or email **hello@opensrc.studio**.
+
+## License
+
+[MIT](LICENSE) © 2026 Aaryan Puri

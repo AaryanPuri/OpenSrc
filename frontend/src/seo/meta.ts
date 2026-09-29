@@ -208,7 +208,8 @@ export function notFoundMeta(site: string, path: string, title = `Page not found
 /* Output                                                              */
 /* ------------------------------------------------------------------ */
 
-const attr = (s: string) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const attr = (s: string) =>
+  s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 const text = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 type Tag = ['name' | 'property', string, string];

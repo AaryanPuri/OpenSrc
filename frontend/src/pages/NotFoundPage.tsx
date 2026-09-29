@@ -1,15 +1,18 @@
 import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
-import { useEffect, type ReactNode } from 'react';
-import { Link } from 'react-router';
+import { useMemo, type ReactNode } from 'react';
+import { Link, useLocation } from 'react-router';
+import { useDocumentMeta } from '../hooks/useDocumentMeta';
+import { useSiteUrl } from '../seo/context';
+import { notFoundMeta } from '../seo/meta';
 
 interface Props {
   title?: string;
   body?: ReactNode;
   /** Replaces the "Back to OpenSrc" link. */
   actions?: ReactNode;
-  /** Sets document.title; null when the page using this sets its own. */
-  documentTitle?: string | null;
+  /** The page's title (it is never indexed). */
+  documentTitle?: string;
 }
 
 /** Any path we don't know: an empty, dashed patch where the page should be. */
@@ -17,11 +20,11 @@ export function NotFoundPage({
   title = 'This patch is missing',
   body = 'Nothing is stitched in at this address. It may have moved, or the link has a loose thread.',
   actions,
-  documentTitle = 'Page not found · OpenSrc',
+  documentTitle,
 }: Props) {
-  useEffect(() => {
-    if (documentTitle) document.title = documentTitle;
-  }, [documentTitle]);
+  const site = useSiteUrl();
+  const { pathname } = useLocation();
+  useDocumentMeta(useMemo(() => notFoundMeta(site, pathname, documentTitle), [site, pathname, documentTitle]));
 
   return (
     <div className="mx-auto flex max-w-xl flex-col items-center px-4 pb-24 pt-20 text-center sm:px-6 sm:pt-28">

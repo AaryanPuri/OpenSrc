@@ -40,8 +40,9 @@ function loadData(): DataFiles | null {
 }
 
 /**
- * The repo directory's data, from the repo-root data/ folder: served under /data/
- * in dev (compacted on the fly) and written to dist/data/ by `vite build`.
+ * The repo directory's data, from the repo-root data/ folder, served under /data/
+ * in dev (compacted on the fly). Builds get theirs from scripts/prerender.ts,
+ * which writes dist/data/ with a hashed index next to the pre-rendered pages.
  */
 function repoData(): Plugin {
   return {
@@ -66,18 +67,6 @@ function repoData(): Plugin {
         res.end(body);
       });
     },
-    generateBundle() {
-      const files = loadData();
-      if (!files) {
-        this.warn('data/repos.json or data/meta.json is missing: the build has no repo directory data.');
-        return;
-      }
-      this.emitFile({ type: 'asset', fileName: 'data/repos.json', source: files.index });
-      this.emitFile({ type: 'asset', fileName: 'data/meta.json', source: files.meta });
-      for (const [fullName, repo] of files.repos) {
-        this.emitFile({ type: 'asset', fileName: `data/repo/${fullName}.json`, source: JSON.stringify(repo) });
-      }
-    },
   };
 }
 
@@ -86,7 +75,7 @@ function repoData(): Plugin {
 // back to calling GitHub directly (see src/lib/search.ts).
 //   API_PROXY_TARGET  where /api goes (default http://127.0.0.1:8787)
 //   WEB_PORT          Vite port (default 5173); when set, fail instead of picking another port
-export default defineConfig(({ mode }) => {
+export default defineConfig(({ mode, isSsrBuild }) => {
   // Prefix '' = also read non-VITE_ variables (from the shell or .env files); none reach client code.
   const env = loadEnv(mode, '.', '');
   const apiTarget = env.API_PROXY_TARGET || 'http://127.0.0.1:8787';
@@ -95,6 +84,22 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react(), repoData()],
+    build: isSsrBuild
+      ? {}
+      : {
+          rollupOptions: {
+            output: {
+              // Libraries change far less often than the app: separate files stay cached across deploys.
+              manualChunks(id: string) {
+                if (/node_modules\/(react|react-dom|react-router|scheduler|cookie|set-cookie-parser)\//.test(id)) {
+                  return 'react';
+                }
+                if (/node_modules\/(framer-motion|motion-dom|motion-utils)\//.test(id)) return 'motion';
+                return undefined;
+              },
+            },
+          },
+        },
     server: {
       proxy,
       // ../shared holds the parser used by both halves.

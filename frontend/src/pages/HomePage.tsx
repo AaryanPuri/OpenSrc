@@ -2,63 +2,49 @@ import { useReducedMotion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router';
+import { LanguageRow } from '../components/BrowseLinks';
 import { CollectionQuilt } from '../components/CollectionQuilt';
 import { Composer } from '../components/Composer';
-import { FieldBadge } from '../components/FieldBadge';
 import { DomainQuilt, Hero } from '../components/Hero';
 import { RepoFilters } from '../components/RepoFilters';
 import { RepoGrid } from '../components/RepoGrid';
+import { useDocumentMeta } from '../hooks/useDocumentMeta';
 import { useRepoUrlState } from '../hooks/useRepoUrlState';
 import { useShell } from '../hooks/useShell';
-import { DOMAINS } from '../lib/dictionary';
-import {
-  emptyQuery,
-  makeDomainMatch,
-  setDifficulty,
-  toggleDomain,
-  toggleLanguage,
-  toQueryText,
-  type Chip,
-  type ParsedQuery,
-} from '../lib/parseQuery';
+import { LIST_PAGE } from '../lib/listPages';
+import { setDifficulty, toggleDomain, toggleLanguage, type Chip, type ParsedQuery } from '../lib/parseQuery';
 import { REPO_SORT_LABELS, removeRepoChip, repoChips, useRepoResults } from '../lib/repoSearch';
+import { useSiteUrl } from '../seo/context';
+import { homeMeta, searchMeta } from '../seo/meta';
 
 const normalizeQueryText = (text: string) => text.trim().replace(/\s+/g, ' ');
 
-/** The query text a field page starts from ("databases"). */
-function fieldQueryText(id: string): string {
-  const def = DOMAINS.find((d) => d.id === id);
-  if (!def) return '';
-  return toQueryText({ ...emptyQuery(), domains: [makeDomainMatch(def, def.synonyms[0])] });
-}
-
 /**
- * The repo directory. `/`: hero, collections, filters and the grid; with `?q=`
- * a compact search bar over the results. `/field/:id` is the same page with
- * that field picked (until it gets a page of its own).
+ * The repo directory. `/`: hero, collections, filters, the grid and the
+ * language and field links; with `?q=` a compact search bar over the results.
  */
-export function HomePage({ fieldId }: { fieldId?: string }) {
+export function HomePage() {
   const { searchRef, homeTick } = useShell();
   const [url, setUrl] = useRepoUrlState();
   const reduce = useReducedMotion();
-  const field = fieldId ? DOMAINS.find((d) => d.id === fieldId) : undefined;
-  // A field page without its own `?q=` searches for the field.
-  const text = url.browsing || !field ? url.q : fieldQueryText(field.id);
-  const browsing = url.browsing || !!field;
+  const text = url.q;
+  const browsing = url.browsing;
   const [input, setInput] = useState(text);
   useEffect(() => setInput(text), [text, homeTick]);
 
-  const { status, results, parsed, meta, now, retry, repos } = useRepoResults(text, url.sort, url.first);
+  const { status, results, parsed, meta, now, retry, repos, partial } = useRepoResults(text, url.sort, url.first);
   const chips = useMemo(() => repoChips(parsed), [parsed]);
-  const total = meta?.count ?? repos.length;
+  const directorySize = meta?.count ?? repos.length;
+  // A pre-rendered home page holds the first page of results; the count is the whole list's.
+  const total = partial?.total ?? results.length;
 
-  useEffect(() => {
-    document.title = field
-      ? `${field.label} repos to contribute to · OpenSrc`
-      : url.q
-        ? `${url.q} · OpenSrc repos`
-        : 'OpenSrc: find open-source repos to contribute to';
-  }, [url.q, field]);
+  const site = useSiteUrl();
+  const pageMeta = useMemo(
+    () =>
+      browsing ? searchMeta(site, url.q) : homeMeta(site, meta, status === 'ready' ? results.slice(0, LIST_PAGE) : []),
+    [browsing, site, url.q, meta, status, results],
+  );
+  useDocumentMeta(pageMeta);
 
   // Switching from the landing to results (a search, or a filter picked on the landing) starts at the top.
   const wasBrowsing = useRef(browsing);
@@ -109,9 +95,9 @@ export function HomePage({ fieldId }: { fieldId?: string }) {
           <h2 id="repos-title" className="font-display text-[22px] font-[560] tracking-[-0.01em]" aria-live="polite">
             {status === 'ready' ? (
               <>
-                <span className="tabular-nums">{results.length.toLocaleString('en')}</span>{' '}
+                <span className="tabular-nums">{total.toLocaleString('en')}</span>{' '}
                 {url.first ? 'first-PR friendly ' : ''}
-                {results.length === 1 ? 'repo' : 'repos'}
+                {total === 1 ? 'repo' : 'repos'}
               </>
             ) : status === 'error' ? (
               'Repos'
@@ -141,6 +127,7 @@ export function HomePage({ fieldId }: { fieldId?: string }) {
         <div className="mt-4">
           <RepoGrid
             repos={results}
+            total={total}
             status={status}
             now={now}
             chips={chips}
@@ -178,6 +165,7 @@ export function HomePage({ fieldId }: { fieldId?: string }) {
         <CollectionQuilt
           repos={repos}
           meta={meta}
+          counts={partial?.collections}
           sub="Hand-cut views of the directory, for where you are right now."
         />
         <div className="mx-auto mt-12 max-w-6xl px-4 sm:px-6">
@@ -187,10 +175,13 @@ export function HomePage({ fieldId }: { fieldId?: string }) {
           </div>
         </div>
         <div className="mt-16">
+          <LanguageRow meta={meta} />
+        </div>
+        <div className="mt-12">
           <DomainQuilt
             hrefFor={(id) => `/field/${id}`}
             title="Browse by field"
-            sub={`The same ${total ? total.toLocaleString('en') : ''} repos, by what they are about.`}
+            sub={`The same ${directorySize ? directorySize.toLocaleString('en') : ''} repos, by what they are about.`}
           />
         </div>
       </>
@@ -199,19 +190,7 @@ export function HomePage({ fieldId }: { fieldId?: string }) {
 
   return (
     <div className="mx-auto max-w-6xl px-4 pb-24 pt-5 sm:px-6 sm:pt-8">
-      {field ? (
-        <header className="mb-6 flex items-center gap-4">
-          <FieldBadge id={field.id} size="lg" />
-          <div className="min-w-0">
-            <p className="eyebrow">Field</p>
-            <h1 className="font-display text-[2rem] font-[560] leading-tight tracking-[-0.02em] sm:text-[2.4rem]">
-              {field.label} repos
-            </h1>
-          </div>
-        </header>
-      ) : (
-        <h1 className="sr-only">{url.q ? `Repos for “${url.q}”` : 'Find open-source repos'}</h1>
-      )}
+      <h1 className="sr-only">{url.q ? `Repos for “${url.q}”` : 'Find open-source repos'}</h1>
       <Composer
         ref={searchRef}
         value={input}

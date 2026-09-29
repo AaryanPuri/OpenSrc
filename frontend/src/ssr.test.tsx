@@ -1,9 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { renderToString } from 'react-dom/server';
 import { StaticRouter } from 'react-router';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { DatasetMeta, RepoRecord } from '../../shared/repo';
 import type { InitialDataset } from './data/dataset';
+import { pageDataFor, prepareSite, siteRoutes, toInitialDataset } from './data/pageData';
+import { render as renderPage } from './entry-server';
 import { metaFor } from './lib/dataset';
 import { AppRoutes } from './routes';
 
@@ -35,6 +37,13 @@ const text = (html: string) =>
     .replace(/\s+/g, ' ');
 
 describe('server rendering', () => {
+  beforeAll(async () => {
+    // The issue finder is lazy: the first render starts loading its chunk (and shows the fallback).
+    render('/issues');
+    await import('./pages/IssuesPage');
+    await new Promise((r) => setTimeout(r, 0));
+  });
+
   beforeEach(() => {
     // Effects never run on the server, so nothing should reach the network.
     vi.stubGlobal(
@@ -109,18 +118,62 @@ describe('server rendering', () => {
     expect(html).not.toContain('Open issues for');
   });
 
-  it('renders field, collection and submit pages', () => {
-    expect(text(render('/field/databases'))).toContain('Databases repos');
+  it('renders language, field, collection and submit pages', () => {
+    const lang = text(render('/language/rust'));
+    expect(lang).toContain('Rust repos to contribute to');
+    expect(lang).toContain(`OpenSrc lists ${rust.length} Rust repositories`);
+    expect(render('/language/rust')).toContain(`href="/repo/${star.fullName}"`);
+    expect(text(render('/field/compilers'))).toContain('Compilers &amp; Languages open-source projects');
     expect(render('/collections')).toContain('data-testid="collection-block"');
     expect(render('/collections/first-pr')).toContain('Best for a first PR');
     expect(render('/submit')).toContain('Submit a repo');
   });
 
   it('renders the 404 page for unknown paths', () => {
-    for (const path of ['/no/such/page', '/field/nope', '/collections/nope']) {
+    // Unknown ids, and languages without enough repos for a page.
+    for (const path of ['/no/such/page', '/field/nope', '/collections/nope', '/language/nope', '/language/go']) {
       const html = render(path);
       expect(html).toContain('This patch is missing');
       expect(html).toContain('href="/"');
+    }
+  });
+});
+
+describe('server render entry', () => {
+  it('reports the page meta', () => {
+    const { html, meta } = renderPage(`/repo/${star.fullName}`, { dataset, siteUrl: 'https://example.test' });
+    expect(html).toContain(`>${star.name}</h1>`);
+    expect(meta?.title).toBe(
+      `${star.fullName}: ${star.goodFirstIssues} good first issue${star.goodFirstIssues === 1 ? '' : 's'} · OpenSrc`,
+    );
+    expect(meta?.canonical).toBe(`https://example.test/repo/${star.fullName}`);
+    expect(meta?.jsonLd[0]).toMatchObject({
+      '@type': 'SoftwareSourceCode',
+      codeRepository: `https://github.com/${star.fullName}`,
+    });
+    expect(meta?.robots).toBeNull();
+  });
+
+  it('marks thin and search pages noindex', () => {
+    expect(renderPage('/submit', { dataset }).meta?.robots).toContain('noindex');
+    expect(renderPage('/nope', { dataset }).meta?.robots).toContain('noindex');
+    expect(renderPage('/?q=rust', { dataset }).meta?.robots).toContain('noindex');
+    expect(renderPage('/', { dataset }).meta?.robots).toBeNull();
+  });
+
+  it('renders a pre-rendered slice exactly like the whole directory', () => {
+    const site = prepareSite(repos, dataset.meta);
+    const full: InitialDataset = { repos: site.repos, meta: site.meta };
+    const opts = { siteUrl: 'https://example.test', indexUrl: '/data/repos.abc.json' };
+    for (const route of siteRoutes(site)) {
+      const pd = pageDataFor(site, route, opts);
+      const fromSlice = renderPage(route.path, { dataset: toInitialDataset(pd), siteUrl: opts.siteUrl });
+      const fromFull = renderPage(route.path, {
+        dataset: { ...full, details: pd.detail ? [pd.detail] : [] },
+        siteUrl: opts.siteUrl,
+      });
+      expect(fromSlice.html, route.path).toBe(fromFull.html);
+      expect(fromSlice.meta, route.path).toEqual(fromFull.meta);
     }
   });
 });

@@ -17,7 +17,7 @@ jobs:
   ci:
     name: Typecheck, lint, test, build
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
@@ -56,5 +56,13 @@ jobs:
       - name: Test (frontend + shared parser, then backend)
         run: npm test
 
-      - name: Build (frontend, then backend)
+      - name: Build (frontend with pre-rendering, then backend)
         run: npm run build
+        env:
+          SITE_URL: https://opensrc.studio
+          CI_REQUIRE_SITE_URL: '1'
+
+      - name: Pre-render smoke test (fixture dataset, hydration in jsdom)
+        run: npm --prefix frontend run test:prerender
+        env:
+          SITE_URL: https://opensrc.studio

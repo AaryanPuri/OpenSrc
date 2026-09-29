@@ -15,9 +15,9 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "types": ["vite/client"],
+    "types": ["vite/client", "node"],
     // ../shared/*.test.ts resolves vitest from here, not the repo root.
     "paths": { "vitest": ["./node_modules/vitest"] }
   },
-  "include": ["src", "../shared", "vite.config.ts"]
+  "include": ["src", "../shared", "scripts", "test", "vite.config.ts", "vitest.prerender.config.ts"]
 }

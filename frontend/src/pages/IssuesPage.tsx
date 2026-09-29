@@ -7,6 +7,7 @@ import { IssueCard, IssueCardSkeleton } from '../components/IssueCard';
 import { RefinePanel } from '../components/RefinePanel';
 import { EmptyState, ErrorState, Notice, SortControl } from '../components/ResultStates';
 import { useAiParse } from '../hooks/useAiParse';
+import { useDocumentMeta } from '../hooks/useDocumentMeta';
 import { useSearch } from '../hooks/useSearch';
 import { useShell } from '../hooks/useShell';
 import { useUrlState } from '../hooks/useUrlState';
@@ -26,6 +27,8 @@ import {
   type ParsedQuery,
 } from '../lib/parseQuery';
 import { fetchRepoMeta, type RepoMeta } from '../lib/search';
+import { useSiteUrl } from '../seo/context';
+import { issuesMeta } from '../seo/meta';
 
 /** How `?q=` is stored: trimmed, single-spaced. */
 const normalizeQueryText = (text: string) => text.trim().replace(/\s+/g, ' ');
@@ -52,9 +55,8 @@ export function IssuesPage() {
 
   useEffect(() => setNoticeDismissed(false), [ghQuery, url.sort]);
 
-  useEffect(() => {
-    document.title = url.q ? `${url.q} · OpenSrc` : 'OpenSrc: stitch yourself into open source';
-  }, [url.q]);
+  const site = useSiteUrl();
+  useDocumentMeta(useMemo(() => issuesMeta(site, url.q), [site, url.q]));
 
   // Stars/language cost one API call per repo, so only fetch them with a token.
   const [repoMeta, setRepoMeta] = useState<Record<string, RepoMeta>>({});

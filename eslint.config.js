@@ -10,7 +10,7 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 export default defineConfig(
-  globalIgnores(['**/dist/', '**/node_modules/', '**/coverage/', '.claude/']),
+  globalIgnores(['**/dist/', '**/dist-ssr/', '**/node_modules/', '**/coverage/', '.claude/']),
 
   js.configs.recommended,
   tseslint.configs.recommended,
@@ -38,6 +38,16 @@ export default defineConfig(
       'react-hooks/exhaustive-deps': 'warn',
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
     },
+  },
+
+  // Build-time server entry and scripts: never hot-reloaded.
+  {
+    files: ['frontend/src/entry-server.tsx'],
+    rules: { 'react-refresh/only-export-components': 'off' },
+  },
+  {
+    files: ['frontend/scripts/**/*.ts', 'frontend/test/**/*.{ts,tsx}'],
+    languageOptions: { globals: { ...globals.node, ...globals.browser } },
   },
 
   // Shared parser: plain TypeScript used by the browser, Node and Workers, so no DOM or Node APIs.

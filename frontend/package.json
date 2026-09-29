@@ -5,9 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit && vite build && vite build --ssr src/entry-server.tsx --outDir dist-ssr && tsx scripts/prerender.ts",
     "preview": "vite preview",
     "test": "vitest run",
+    "test:prerender": "vitest run --config vitest.prerender.config.ts",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit"
   },

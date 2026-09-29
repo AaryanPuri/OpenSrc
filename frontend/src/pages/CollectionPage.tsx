@@ -1,22 +1,29 @@
 import { ArrowLeft } from 'lucide-react';
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { Link, useParams } from 'react-router';
-import { collectionById, collectionContext, selectCollection } from '../../../shared/collections';
+import { COLLECTIONS, collectionById, collectionContext, selectCollection } from '../../../shared/collections';
 import { CollectionBlockArt, CollectionQuilt } from '../components/CollectionQuilt';
 import { RepoGrid } from '../components/RepoGrid';
 import { useDataset } from '../data/dataset';
+import { useDocumentMeta } from '../hooks/useDocumentMeta';
+import { LIST_PAGE } from '../lib/listPages';
+import { useSiteUrl } from '../seo/context';
+import { collectionMeta, collectionsMeta } from '../seo/meta';
 import { NotFoundPage } from './NotFoundPage';
 
 /** One collection's repos. (A richer page, with its own filters, comes later.) */
 export function CollectionPage() {
   const { id = '' } = useParams();
   const c = collectionById(id);
-  const { status, repos, meta, now, retry } = useDataset();
+  const { status, repos, meta, now, retry, partial } = useDataset();
+  const site = useSiteUrl();
   const list = useMemo(() => (c && meta ? selectCollection(c, repos, collectionContext(meta)) : []), [c, repos, meta]);
-
-  useEffect(() => {
-    if (c) document.title = `${c.title}: repos to contribute to · OpenSrc`;
-  }, [c]);
+  const total = partial?.total ?? list.length;
+  const pageMeta = useMemo(
+    () => (c && status === 'ready' ? collectionMeta(site, c, list.slice(0, LIST_PAGE), total) : null),
+    [c, status, site, list, total],
+  );
+  useDocumentMeta(pageMeta);
 
   if (!c) return <NotFoundPage />;
 
@@ -42,8 +49,7 @@ export function CollectionPage() {
       <h2 className="mt-8 font-display text-[22px] font-[560] tracking-[-0.01em]" aria-live="polite">
         {status === 'ready' ? (
           <>
-            <span className="tabular-nums">{list.length.toLocaleString('en')}</span>{' '}
-            {list.length === 1 ? 'repo' : 'repos'}
+            <span className="tabular-nums">{total.toLocaleString('en')}</span> {total === 1 ? 'repo' : 'repos'}
           </>
         ) : (
           'Repos'
@@ -52,6 +58,7 @@ export function CollectionPage() {
       <div className="mt-4">
         <RepoGrid
           repos={list}
+          total={total}
           status={status}
           now={now}
           onRetry={retry}
@@ -69,10 +76,9 @@ export function CollectionPage() {
 
 /** Every collection as a quilt block. */
 export function CollectionsPage() {
-  const { repos, meta } = useDataset();
-  useEffect(() => {
-    document.title = 'Collections · OpenSrc';
-  }, []);
+  const { repos, meta, partial } = useDataset();
+  const site = useSiteUrl();
+  useDocumentMeta(useMemo(() => collectionsMeta(site, COLLECTIONS), [site]));
   return (
     <div className="pb-24 pt-5 sm:pt-8">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
@@ -86,7 +92,7 @@ export function CollectionsPage() {
         </p>
       </div>
       <div className="mt-8">
-        <CollectionQuilt repos={repos} meta={meta} title="All collections" detailed />
+        <CollectionQuilt repos={repos} meta={meta} counts={partial?.collections} title="All collections" detailed />
       </div>
     </div>
   );

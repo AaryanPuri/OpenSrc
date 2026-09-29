@@ -67,9 +67,7 @@ export interface ListStats {
 const tally = (list: RepoRecord[], keys: (r: RepoRecord) => string[]): [string, number][] => {
   const counts = new Map<string, number>();
   for (const r of list) for (const k of keys(r)) counts.set(k, (counts.get(k) ?? 0) + 1);
-  return [...counts]
-    .sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))
-    .slice(0, 6);
+  return [...counts].sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0)).slice(0, 6);
 };
 
 /** `list` sorted best first (listRepos). */
@@ -101,24 +99,33 @@ export function joinList(items: string[]): string {
  * and what else they have in common.
  */
 export function listIntro(kind: ListKind, id: string, label: string, s: ListStats): string {
-  if (s.count === 0) return `No ${label} repos are in the directory right now. Check back after the next nightly update.`;
-  const what = kind === 'language' ? `${label} ${s.count === 1 ? 'repository' : 'repositories'}` : `${s.count === 1 ? 'repository' : 'repositories'} about ${label.toLowerCase()}`;
+  if (s.count === 0)
+    return `No ${label} repos are in the directory right now. Check back after the next nightly update.`;
+  const what =
+    kind === 'language'
+      ? `${label} ${s.count === 1 ? 'repository' : 'repositories'}`
+      : `${s.count === 1 ? 'repository' : 'repositories'} about ${label}`;
   const parts = [
     `OpenSrc lists ${s.count.toLocaleString('en')} ${what} with open issues for new contributors` +
-      (s.firstPr ? `, and ${s.firstPr.toLocaleString('en')} of them ${s.firstPr === 1 ? 'is' : 'are'} first-PR friendly.` : '.'),
-    `Between them they have ${plural(s.gfi, 'open good first issue')} and ${plural(s.helpWanted, 'help-wanted issue')}.`,
+      (s.firstPr
+        ? `, and ${s.firstPr.toLocaleString('en')} of them ${s.firstPr === 1 ? 'is' : 'are'} first-PR friendly.`
+        : '.'),
+    `${s.count === 1 ? 'It has' : 'Between them they have'} ${plural(s.gfi, 'open good first issue')} and ${plural(s.helpWanted, 'help-wanted issue')}.`,
     s.top.length
       ? `The median welcome score is ${s.medianScore}/100, and the best-scored right now ${s.top.length === 1 ? 'is' : 'are'} ${joinList(s.top)}.`
       : '',
   ];
   if (kind === 'language') {
     const fields = s.fields.slice(0, 3).map(([f]) => fieldDef(f)?.label ?? f);
-    if (fields.length) parts.push(`${s.count === 1 ? 'It is' : 'Most are'} about ${joinList(fields).toLowerCase()}.`);
+    if (fields.length) parts.push(`${s.count === 1 ? 'It is' : 'Most are'} about ${joinList(fields)}.`);
   } else {
     const langs = s.languages.slice(0, 3).map(([l]) => languageLabel(l) ?? l);
     if (langs.length) parts.push(`${s.count === 1 ? 'It is' : 'Most are'} written in ${joinList(langs)}.`);
-    const also = s.fields.filter(([f]) => f !== id).slice(0, 2).map(([f]) => (fieldDef(f)?.label ?? f).toLowerCase());
-    if (also.length) parts.push(`Many also touch ${joinList(also)}.`);
+    const also = s.fields
+      .filter(([f]) => f !== id)
+      .slice(0, 2)
+      .map(([f]) => fieldDef(f)?.label ?? f);
+    if (also.length) parts.push(`${s.count === 1 ? 'It also touches' : 'Many also touch'} ${joinList(also)}.`);
   }
   return parts.filter(Boolean).join(' ');
 }

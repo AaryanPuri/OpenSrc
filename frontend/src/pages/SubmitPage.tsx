@@ -1,13 +1,15 @@
 import { ArrowLeft } from 'lucide-react';
-import { useEffect } from 'react';
+import { useMemo } from 'react';
 import { Link } from 'react-router';
 import { NeedleIcon } from '../components/icons';
+import { useDocumentMeta } from '../hooks/useDocumentMeta';
+import { useSiteUrl } from '../seo/context';
+import { submitMeta } from '../seo/meta';
 
 /** Placeholder until the submit / flag flow lands. */
 export function SubmitPage() {
-  useEffect(() => {
-    document.title = 'Submit a repo · OpenSrc';
-  }, []);
+  const site = useSiteUrl();
+  useDocumentMeta(useMemo(() => submitMeta(site), [site]));
   return (
     <div className="mx-auto flex max-w-xl flex-col items-center px-4 pb-24 pt-20 text-center sm:px-6 sm:pt-28">
       <span

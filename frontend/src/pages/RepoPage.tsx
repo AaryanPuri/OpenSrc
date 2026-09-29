@@ -25,37 +25,44 @@ import { FirstPrRibbon } from '../components/RepoCard';
 import { EmptyState, ErrorState, Notice } from '../components/ResultStates';
 import { ScoreStitches } from '../components/ScoreStitches';
 import { useDataset } from '../data/dataset';
+import { useDocumentMeta } from '../hooks/useDocumentMeta';
 import { useSearch } from '../hooks/useSearch';
 import { useShell } from '../hooks/useShell';
 import { repoDetailPath } from '../lib/dataset';
 import { fabricStyle } from '../lib/fabric';
+import { hasLanguagePage } from '../lib/listPages';
 import { committedAgo, fieldLabel, languageColor, repoFabric, scoreLevel } from '../lib/repoDisplay';
 import { plural, replyTime } from '../lib/format';
 import { parseQuery } from '../lib/parseQuery';
 import { issueLevelChips, repoIssueQuery, ISSUE_TABS, type IssueTab } from '../lib/repoSearch';
 import { failedGateLabels, firstPrChecks, scoreLines } from '../lib/repoWhy';
+import { useSiteUrl } from '../seo/context';
+import { repoMeta } from '../seo/meta';
 import { NotFoundPage } from './NotFoundPage';
 
 const FLAG_URL = 'https://github.com/AaryanPuri/OpenSrc/issues/new?template=flag-repo.yml';
 
 const TAB_LABEL: Record<IssueTab, string> = { gfi: 'Good first issues', help: 'Help wanted', all: 'All open' };
 
-/** The full record (homepage, topics, whole description) from /data/repo/…; the index is enough until then. */
-function useRepoDetail(fullName: string | null) {
-  const [detail, setDetail] = useState<RepoRecord | null>(null);
+/**
+ * The full record (homepage, topics, whole description): handed over with a
+ * pre-rendered page, else fetched from /data/repo/…; the index is enough until then.
+ */
+function useRepoDetail(fullName: string | null, known: RepoRecord | undefined) {
+  const [fetched, setFetched] = useState<RepoRecord | null>(null);
   useEffect(() => {
-    setDetail(null);
-    if (!fullName) return;
+    if (!fullName || known) return;
     const c = new AbortController();
     fetch(repoDetailPath(fullName), { signal: c.signal })
       .then((r) => (r.ok ? (r.json() as Promise<RepoRecord>) : null))
       .then((d) => {
-        if (d && d.fullName === fullName) setDetail(d);
+        if (d && d.fullName === fullName) setFetched(d);
       })
       .catch(() => {});
     return () => c.abort();
-  }, [fullName]);
-  return detail;
+  }, [fullName, known]);
+  if (known) return known;
+  return fetched && fetched.fullName === fullName ? fetched : null;
 }
 
 /** One repo: facts, why it scores what it does, where to start, and its open issues, live. */
@@ -67,7 +74,7 @@ export function RepoPage() {
     () => dataset.repos.find((r) => r.fullName.toLowerCase() === wanted) ?? null,
     [dataset.repos, wanted],
   );
-  const detail = useRepoDetail(indexed?.fullName ?? null);
+  const detail = useRepoDetail(indexed?.fullName ?? null, indexed ? dataset.details[indexed.fullName] : undefined);
   // The index's numbers stay authoritative (same snapshot); the detail adds what the index leaves out.
   const repo = useMemo(
     () =>
@@ -76,11 +83,6 @@ export function RepoPage() {
         : indexed,
     [indexed, detail],
   );
-
-  useEffect(() => {
-    if (dataset.status !== 'ready') return;
-    document.title = repo ? `${repo.fullName}: how to contribute · OpenSrc` : 'Repo not found · OpenSrc';
-  }, [repo, dataset.status]);
 
   if (dataset.status === 'error') {
     return (
@@ -94,10 +96,13 @@ export function RepoPage() {
   }
   if (dataset.status !== 'ready') return <RepoPageSkeleton />;
   if (!repo) return <UnknownRepo fullName={`${owner}/${name}`} />;
-  return <RepoView repo={repo} now={dataset.now} />;
+  const languagePage = !!repo.language && !!dataset.meta && hasLanguagePage(dataset.meta, repo.language);
+  return <RepoView repo={repo} now={dataset.now} languagePage={languagePage} />;
 }
 
-function RepoView({ repo, now }: { repo: RepoRecord; now: number }) {
+function RepoView({ repo, now, languagePage }: { repo: RepoRecord; now: number; languagePage: boolean }) {
+  const site = useSiteUrl();
+  useDocumentMeta(useMemo(() => repoMeta(site, repo), [site, repo]));
   const { theme, token, isSaved, onToggleSave, isRepoSaved, onToggleRepoSave, openSettings } = useShell();
   const [params, setParams] = useSearchParams();
   const tab = (ISSUE_TABS as string[]).includes(params.get('tab') ?? '') ? (params.get('tab') as IssueTab) : 'gfi';
@@ -372,7 +377,7 @@ function RepoView({ repo, now }: { repo: RepoRecord; now: number }) {
         </div>
 
         <aside className="min-w-0 space-y-8" aria-label="About this repo">
-          <Facts repo={repo} now={now} />
+          <Facts repo={repo} now={now} languagePage={languagePage} />
           <WhyScore repo={repo} now={now} />
           <a
             href={`${FLAG_URL}&repo=${encodeURIComponent(repo.fullName)}`}
@@ -429,7 +434,14 @@ function StartStep({
   );
 }
 
-function Facts({ repo, now }: { repo: RepoRecord; now: number }) {
+function Facts({ repo, now, languagePage }: { repo: RepoRecord; now: number; languagePage: boolean }) {
+  const dot = (
+    <span
+      className="h-2.5 w-2.5 rounded-full ring-1 ring-inset ring-black/10"
+      style={{ backgroundColor: languageColor(repo.language) }}
+      aria-hidden="true"
+    />
+  );
   const rows: [string, React.ReactNode][] = [
     ['Stars', repo.stars.toLocaleString('en')],
     ['Forks', repo.forks.toLocaleString('en')],
@@ -440,13 +452,18 @@ function Facts({ repo, now }: { repo: RepoRecord; now: number }) {
     ['Help wanted', repo.helpWanted.toLocaleString('en')],
     [
       'Language',
-      repo.languageName ? (
+      repo.languageName && languagePage ? (
+        <Link
+          to={`/language/${repo.language}`}
+          className="inline-flex items-center gap-1.5 underline decoration-line-strong underline-offset-2 hover:text-accent hover:decoration-accent"
+          title={`More ${repo.languageName} repos`}
+        >
+          {dot}
+          {repo.languageName}
+        </Link>
+      ) : repo.languageName ? (
         <span className="inline-flex items-center gap-1.5">
-          <span
-            className="h-2.5 w-2.5 rounded-full ring-1 ring-inset ring-black/10"
-            style={{ backgroundColor: languageColor(repo.language) }}
-            aria-hidden="true"
-          />
+          {dot}
           {repo.languageName}
         </span>
       ) : (
@@ -550,7 +567,7 @@ function WhyScore({ repo, now }: { repo: RepoRecord; now: number }) {
 function UnknownRepo({ fullName }: { fullName: string }) {
   return (
     <NotFoundPage
-      documentTitle={null}
+      documentTitle="Repo not found · OpenSrc"
       title="This repo isn't in the directory"
       body={
         <>

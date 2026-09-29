@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "generatedAt": "2026-09-29T08:00:00.000Z",
+  "bootstrapAt": "2026-09-01T08:00:00.000Z",
+  "count": 8,
+  "firstPrFriendly": 7,
+  "languages": {
+    "typescript": 3,
+    "rust": 3,
+    "python": 2
+  },
+  "fields": {
+    "data-science": 2,
+    "ml": 2,
+    "databases": 2,
+    "compilers": 2,
+    "systems": 1,
+    "backend": 1,
+    "cli": 1
+  },
+  "pointsUsed": 0,
+  "scope": "full"
+}

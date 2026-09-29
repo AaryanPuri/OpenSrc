@@ -42,9 +42,7 @@ export function DatasetProvider({ initial, children }: { initial?: InitialDatase
     ctrl.current = c;
     started.current = true;
     setState((s) => (s.partial ? { ...s, error: undefined } : { ...s, status: 'loading', error: undefined }));
-    const meta = knownMeta.current
-      ? Promise.resolve(knownMeta.current)
-      : fetchJson<DatasetMeta>(META_URL, c.signal);
+    const meta = knownMeta.current ? Promise.resolve(knownMeta.current) : fetchJson<DatasetMeta>(META_URL, c.signal);
     Promise.all([fetchJson<CompactDataset>(indexUrl, c.signal), meta])
       .then(([index, meta]) => {
         if (c.signal.aborted) return;
