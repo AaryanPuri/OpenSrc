@@ -22,6 +22,8 @@ interface Props {
   mode?: 'issues' | 'repos';
   /** Repos in the directory, for the copy. */
   repoCount?: number;
+  /** One quiet line under the search (the directory's "Looking for your first PR?"). */
+  hint?: ReactNode;
 }
 
 /** Hand-sewn running stitch under a phrase; draws itself left to right. */
@@ -211,7 +213,7 @@ function SelvageBand() {
 }
 
 export const Hero = forwardRef<HTMLTextAreaElement, Props>(function Hero(
-  { value, onChange, onSubmit, onEdit, loading, mode = 'issues', repoCount },
+  { value, onChange, onSubmit, onEdit, loading, mode = 'issues', repoCount, hint },
   ref,
 ) {
   const repos = mode === 'repos';
@@ -281,6 +283,7 @@ export const Hero = forwardRef<HTMLTextAreaElement, Props>(function Hero(
               mode={mode}
             />
           </div>
+          {hint && <div className="mt-3">{hint}</div>}
         </div>
 
         <div className="hidden lg:block">

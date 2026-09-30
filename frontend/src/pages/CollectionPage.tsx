@@ -11,7 +11,8 @@ import {
 } from '../../../shared/collections';
 import { sortRepos } from '../../../shared/repoFilter';
 import { CollectionBlockArt, CollectionQuilt } from '../components/CollectionQuilt';
-import { RepoGrid } from '../components/RepoGrid';
+import { FirstPrSwitch } from '../components/RepoFilters';
+import { GridCount, RepoGrid } from '../components/RepoGrid';
 import { useDataset } from '../data/dataset';
 import { useDocumentMeta } from '../hooks/useDocumentMeta';
 import { LIST_PAGE } from '../lib/listPages';
@@ -28,9 +29,18 @@ export function CollectionPage() {
   const site = useSiteUrl();
   const [params, setParams] = useSearchParams();
   const asked = params.get('sort') as RepoSort | null;
-  const sort: RepoSort = asked && REPO_SORTS.includes(asked) ? asked : (c?.sort ?? 'score');
+  // "Best for a first PR" is first-PR friendly already, so it has no toggle but reads in first-PR mode.
+  const firstPrOnly = c?.id === 'first-pr';
+  const firstParam = !firstPrOnly && params.get('first') === '1';
+  const first = firstPrOnly || firstParam;
+  // With the toggle on, the default order is most unclaimed issues; otherwise the collection's own.
+  const defaultSort: RepoSort = firstParam ? 'claimable' : (c?.sort ?? 'score');
+  const sort: RepoSort = asked && REPO_SORTS.includes(asked) ? asked : defaultSort;
   const own = useMemo(() => (c && meta ? selectCollection(c, repos, collectionContext(meta)) : []), [c, repos, meta]);
-  const list = useMemo(() => (c && sort !== c.sort ? sortRepos(own, sort) : own), [c, own, sort]);
+  const list = useMemo(() => {
+    const shown = firstParam ? own.filter((r) => r.firstPrFriendly) : own;
+    return c && (firstParam || sort !== c.sort) ? sortRepos(shown, sort) : shown;
+  }, [c, own, sort, firstParam]);
   const total = partial?.total ?? list.length;
   const pageMeta = useMemo(
     () => (c && status === 'ready' ? collectionMeta(site, c, own.slice(0, LIST_PAGE), total) : null),
@@ -43,8 +53,14 @@ export function CollectionPage() {
   const ready = status === 'ready';
   const setSort = (s: RepoSort) => {
     const next = new URLSearchParams(params);
-    if (s === c.sort) next.delete('sort');
+    if (s === defaultSort) next.delete('sort');
     else next.set('sort', s);
+    setParams(next, { replace: true, preventScrollReset: true });
+  };
+  const setFirst = (on: boolean) => {
+    const next = new URLSearchParams(params);
+    if (on) next.set('first', '1');
+    else next.delete('first');
     setParams(next, { replace: true, preventScrollReset: true });
   };
 
@@ -72,15 +88,12 @@ export function CollectionPage() {
 
       <div className="mt-8 flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
         <h2 className="font-display text-[22px] font-[560] tracking-[-0.01em]" aria-live="polite">
-          {ready ? (
-            <>
-              <span className="tabular-nums">{total.toLocaleString('en')}</span> {total === 1 ? 'repo' : 'repos'}
-            </>
-          ) : (
-            'Repos'
-          )}
+          {ready ? <GridCount total={total} first={first} /> : 'Repos'}
           <span className="sr-only"> by {REPO_SORT_LABELS[sort].label.toLowerCase()}</span>
         </h2>
+        {!firstPrOnly && <FirstPrSwitch on={firstParam} onChange={setFirst} className="w-full sm:w-auto" />}
+      </div>
+      <div className="mt-3 flex flex-wrap items-center gap-3">
         {(!ready || total > 1) && (
           <div
             role="radiogroup"
@@ -108,7 +121,7 @@ export function CollectionPage() {
         )}
       </div>
       <div className="mt-4">
-        {ready && total === 0 ? (
+        {ready && total === 0 && !firstParam ? (
           <EmptyCollection c={c} />
         ) : (
           <RepoGrid
@@ -117,11 +130,18 @@ export function CollectionPage() {
             status={status}
             now={now}
             onRetry={retry}
-            resetKey={`${c.id}:${sort}`}
+            resetKey={`${c.id}:${sort}:${firstParam}`}
+            firstPr={first}
             emptyAction={
-              <Link to="/" className="btn-seam">
-                Browse the whole directory
-              </Link>
+              firstParam ? (
+                <button type="button" className="btn-seam" onClick={() => setFirst(false)}>
+                  Include repos that aren't first-PR friendly
+                </button>
+              ) : (
+                <Link to="/" className="btn-seam">
+                  Browse the whole directory
+                </Link>
+              )
             }
           />
         )}

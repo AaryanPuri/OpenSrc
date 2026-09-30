@@ -3,6 +3,8 @@ import { expect, ISSUE_TITLES, mockNetwork, test } from './fixtures';
 
 /** The fixture dataset (frontend/test/fixtures/dataset): 8 repos, 3 of them Rust. */
 const RUST = ['gleam-lang/gleam', 'PyO3/pyo3', 'uutils/coreutils'];
+/** All but Dexie.js are first-PR friendly (all 3 Rust ones are). */
+const FIRST_PR = 7;
 
 test.describe('directory', () => {
   test('home grid renders, and a plain-words search filters it with patches', async ({ page }) => {
@@ -16,10 +18,79 @@ test.describe('directory', () => {
 
     const chips = page.getByTestId('filter-chip');
     await expect(chips.filter({ hasText: 'Rust' })).toHaveCount(1);
-    await expect(chips.filter({ hasText: 'Good first issues' })).toHaveCount(1);
+    await expect(chips.filter({ hasText: 'First-PR friendly' })).toHaveCount(1);
     const cards = page.getByTestId('repo-card');
     await expect(cards).toHaveCount(RUST.length);
     for (const name of RUST) await expect(cards.filter({ hasText: name.split('/')[1] })).toHaveCount(1);
+  });
+
+  test('the First-PR toggle is the only audience switch, and the heading holds the one count', async ({ page }) => {
+    await page.goto('/');
+    const heading = page.locator('#repos-title');
+    const toggle = page.getByTestId('first-pr-switch');
+    await expect(heading).toHaveText('8 projects');
+    await expect(page.getByRole('group', { name: 'Difficulty' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /Challenge|Some exp/ })).toHaveCount(0);
+    // The toggle describes itself; it carries no number.
+    const label = page.locator('label').filter({ has: toggle });
+    await expect(label).toContainText('Only repos ready for your first PR');
+    expect(await label.innerText()).not.toMatch(/\d/);
+
+    await toggle.click();
+    await expect(toggle).toHaveAttribute('aria-checked', 'true');
+    await expect(page).toHaveURL(/[?&]first=1/);
+    await expect(heading).toHaveText(`${FIRST_PR} first-PR friendly repos`);
+    await expect(page.getByTestId('repo-card')).toHaveCount(FIRST_PR);
+    await expect(page.getByText('by most unclaimed issues')).toBeVisible();
+    await expect(page.getByTestId('gfi-tag').first()).toContainText('unclaimed good first');
+    await expect(page.getByTestId('first-pr-hint')).toHaveCount(0);
+
+    await toggle.click();
+    await expect(heading).toHaveText('8 projects');
+    await expect(page.getByText('by best score')).toBeVisible();
+    await expect(page.getByTestId('first-pr-hint')).toBeVisible();
+  });
+
+  test('beginner wording turns the toggle on; unpicking its patch turns it off', async ({ page }) => {
+    await page.goto('/');
+    const input = page.getByTestId('search-input');
+    await input.fill('beginner friendly rust repos');
+    await input.press('Enter');
+    const toggle = page.getByTestId('first-pr-switch');
+    const heading = page.locator('#repos-title');
+    await expect(toggle).toHaveAttribute('aria-checked', 'true');
+    await expect(heading).toHaveText(`${RUST.length} first-PR friendly repos`);
+
+    const patch = page.getByTestId('filter-chip').filter({ hasText: 'First-PR friendly' });
+    await patch.getByTestId('chip-remove').click();
+    await expect(toggle).toHaveAttribute('aria-checked', 'false');
+    await expect(page).toHaveURL(/\?q=rust$/);
+    await expect(heading).toHaveText(`${RUST.length} projects`);
+    await expect(page.getByTestId('filter-chip').filter({ hasText: 'First-PR friendly' })).toHaveCount(0);
+
+    // Switching the toggle off takes the wording with it too.
+    await input.fill('beginner rust');
+    await input.press('Enter');
+    await expect(toggle).toHaveAttribute('aria-checked', 'true');
+    await toggle.click();
+    await expect(toggle).toHaveAttribute('aria-checked', 'false');
+    await expect(page).toHaveURL(/\?q=rust$/);
+  });
+
+  test('help wanted / intermediate stay issue-level, as one Contributions welcome patch', async ({ page }) => {
+    await page.goto('/?q=intermediate');
+    await expect(page.locator('#repos-title')).toHaveText('8 projects');
+    await expect(page.getByTestId('first-pr-switch')).toHaveAttribute('aria-checked', 'false');
+    const chips = page.getByTestId('filter-chip');
+    await expect(chips).toHaveCount(1);
+    await expect(chips).toContainText('Contributions welcome');
+  });
+
+  test('/?first=1 still works', async ({ page }) => {
+    await page.goto('/?first=1');
+    await expect(page.getByTestId('first-pr-switch')).toHaveAttribute('aria-checked', 'true');
+    await expect(page.locator('#repos-title')).toHaveText(`${FIRST_PR} first-PR friendly repos`);
+    await expect(page.getByTestId('repo-card')).toHaveCount(FIRST_PR);
   });
 
   test('card → repo page with live issues, and back to the same search', async ({ page, mocks }) => {
@@ -67,6 +138,12 @@ test.describe('directory', () => {
     await page.goto('/language/rust');
     await expect(page.getByRole('heading', { level: 1 })).toContainText('Rust');
     await expect(page.getByTestId('repo-card')).toHaveCount(RUST.length);
+    await expect(page.getByRole('heading', { level: 2, name: /projects/ })).toContainText(`${RUST.length} projects`);
+    await page.getByTestId('first-pr-switch').click();
+    await expect(page).toHaveURL(/\/language\/rust\?first=1$/);
+    await expect(page.getByRole('heading', { level: 2, name: /first-PR/ })).toContainText(
+      `${RUST.length} first-PR friendly repos`,
+    );
 
     await page.goto('/field/compilers');
     await expect(page.getByRole('heading', { level: 1 })).toContainText('Compilers');

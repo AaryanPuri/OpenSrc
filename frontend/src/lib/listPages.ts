@@ -6,7 +6,7 @@
 import type { DatasetMeta, RepoRecord } from '../../../shared/repo';
 import { sortRepos } from '../../../shared/repoFilter';
 import { DOMAINS, LANGUAGES, type DomainDef, type LanguageDef } from './dictionary';
-import { plural } from './format';
+import { plural, welcomeIssues } from './format';
 import { emptyQuery, makeDomainMatch, toQueryText } from './parseQuery';
 
 /** A language gets a page once the directory has this many of its repos (fewer would be a thin page). */
@@ -110,7 +110,7 @@ export function listIntro(kind: ListKind, id: string, label: string, s: ListStat
       (s.firstPr
         ? `, and ${s.firstPr.toLocaleString('en')} of them ${s.firstPr === 1 ? 'is' : 'are'} first-PR friendly.`
         : '.'),
-    `${s.count === 1 ? 'It has' : 'Between them they have'} ${plural(s.gfi, 'open good first issue')} and ${plural(s.helpWanted, 'help-wanted issue')}.`,
+    `${s.count === 1 ? 'It has' : 'Between them they have'} ${plural(s.gfi, 'open good first issue')} and ${welcomeIssues(s.helpWanted)}.`,
     s.top.length
       ? `The median welcome score is ${s.medianScore}/100, and the best-scored right now ${s.top.length === 1 ? 'is' : 'are'} ${joinList(s.top)}.`
       : '',

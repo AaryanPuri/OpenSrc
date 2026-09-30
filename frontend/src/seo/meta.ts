@@ -8,7 +8,7 @@
 import type { Collection } from '../../../shared/collections';
 import type { DatasetMeta, RepoRecord } from '../../../shared/repo';
 import { clampText } from '../lib/dataset';
-import { plural, replyTime } from '../lib/format';
+import { plural, replyTime, welcomeIssues } from '../lib/format';
 import { joinList, listIntro, type ListKind, type ListStats } from '../lib/listPages';
 import { repoPath } from '../lib/repoDisplay';
 import { breadcrumbs, itemList, linkList, scriptJson, softwareSourceCode, webSite, type JsonLd } from './jsonLd';
@@ -97,7 +97,7 @@ export function searchMeta(site: string, q: string): PageMeta {
 export function repoMeta(site: string, repo: RepoRecord): PageMeta {
   const facts = [
     plural(repo.goodFirstIssues, 'open good first issue'),
-    repo.helpWanted ? plural(repo.helpWanted, 'help-wanted issue') : '',
+    repo.helpWanted ? welcomeIssues(repo.helpWanted) : '',
     repo.languageName ? `written in ${repo.languageName}` : '',
     repo.responseHours !== null ? `maintainers reply in ${replyTime(repo.responseHours)}` : '',
   ].filter(Boolean);

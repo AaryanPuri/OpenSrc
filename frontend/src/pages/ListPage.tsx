@@ -1,11 +1,12 @@
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { useMemo, type ReactNode } from 'react';
-import { Link, useParams } from 'react-router';
+import { Link, useParams, useSearchParams } from 'react-router';
 import type { DatasetMeta } from '../../../shared/repo';
 import { LanguageChip, LanguageDot } from '../components/BrowseLinks';
 import { FieldBadge } from '../components/FieldBadge';
 import { NewsletterForm } from '../components/NewsletterForm';
-import { RepoGrid } from '../components/RepoGrid';
+import { FirstPrSwitch } from '../components/RepoFilters';
+import { GridCount, RepoGrid } from '../components/RepoGrid';
 import { useDataset } from '../data/dataset';
 import { useDocumentMeta } from '../hooks/useDocumentMeta';
 import {
@@ -24,6 +25,8 @@ import {
   type ListStats,
 } from '../lib/listPages';
 import { fieldLabel } from '../lib/repoDisplay';
+import { sortRepos } from '../../../shared/repoFilter';
+import { defaultRepoSort, REPO_SORT_LABELS } from '../lib/repoSearch';
 import { useSiteUrl } from '../seo/context';
 import { listMeta } from '../seo/meta';
 import { NotFoundPage } from './NotFoundPage';
@@ -70,20 +73,40 @@ interface Props {
 function ListPage({ kind, id, label, badge }: Props) {
   const { status, repos, meta, now, retry, partial } = useDataset();
   const site = useSiteUrl();
-  const list = useMemo(() => (label ? listRepos(repos, kind, id) : []), [repos, kind, id, label]);
+  const [params, setParams] = useSearchParams();
+  const first = params.get('first') === '1';
+  const sort = defaultRepoSort(first);
+  const all = useMemo(() => (label ? listRepos(repos, kind, id) : []), [repos, kind, id, label]);
+  // The toggle's view: first-PR friendly only, most unclaimed issues first. The intro and meta describe the whole list.
+  const list = useMemo(
+    () =>
+      first
+        ? sortRepos(
+            all.filter((r) => r.firstPrFriendly),
+            sort,
+          )
+        : all,
+    [all, first, sort],
+  );
   const ready = status === 'ready';
-  const stats = useMemo(() => partial?.stats ?? (ready ? listStats(list) : null), [partial, ready, list]);
+  const stats = useMemo(() => partial?.stats ?? (ready ? listStats(all) : null), [partial, ready, all]);
   const total = partial?.total ?? list.length;
   const exists = meta ? (kind === 'language' ? hasLanguagePage(meta, id) : hasFieldPage(meta, id)) : !!label;
   const pageMeta = useMemo(
-    () => (label && exists && stats ? listMeta(site, kind, id, label, stats, list.slice(0, LIST_PAGE)) : null),
-    [label, exists, stats, site, kind, id, list],
+    () => (label && exists && stats ? listMeta(site, kind, id, label, stats, all.slice(0, LIST_PAGE)) : null),
+    [label, exists, stats, site, kind, id, all],
   );
   useDocumentMeta(pageMeta);
 
   if (!label || !exists) return <NotFoundPage />;
 
   const q = directoryQuery(kind, id);
+  const setFirst = (on: boolean) => {
+    const next = new URLSearchParams(params);
+    if (on) next.set('first', '1');
+    else next.delete('first');
+    setParams(next, { replace: true, preventScrollReset: true });
+  };
   const related = meta && stats ? relatedLinks(kind, id, stats, meta) : null;
 
   return (
@@ -115,24 +138,21 @@ function ListPage({ kind, id, label, badge }: Props) {
         </div>
       )}
 
-      <div className="mt-8 flex min-h-11 flex-wrap items-center justify-between gap-x-4 gap-y-1">
+      <div className="mt-8 flex min-h-11 flex-wrap items-center justify-between gap-x-4 gap-y-3">
         <h2 className="font-display text-[22px] font-[560] tracking-[-0.01em]" aria-live="polite">
-          {ready ? (
-            <>
-              <span className="tabular-nums">{total.toLocaleString('en')}</span> {total === 1 ? 'repo' : 'repos'}
-            </>
-          ) : (
-            'Repos'
-          )}
-          <span className="sr-only"> by best score</span>
+          {ready ? <GridCount total={total} first={first} /> : 'Repos'}
+          <span className="sr-only"> by {REPO_SORT_LABELS[sort].label.toLowerCase()}</span>
         </h2>
-        <Link
-          to={`/?q=${encodeURIComponent(q)}`}
-          className="inline-flex min-h-11 items-center gap-1 text-[13px] font-medium text-accent underline-offset-2 hover:underline sm:min-h-0"
-          data-testid="refine-in-directory"
-        >
-          Filter these in the directory <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-        </Link>
+        <div className="flex w-full flex-wrap items-center gap-x-4 gap-y-2 sm:w-auto">
+          <FirstPrSwitch on={first} onChange={setFirst} className="w-full sm:w-auto" />
+          <Link
+            to={`/?q=${encodeURIComponent(q)}${first ? '&first=1' : ''}`}
+            className="inline-flex min-h-11 items-center gap-1 text-[13px] font-medium text-accent underline-offset-2 hover:underline sm:min-h-0"
+            data-testid="refine-in-directory"
+          >
+            Filter these in the directory <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+          </Link>
+        </div>
       </div>
       <div className="mt-4">
         <RepoGrid
@@ -141,11 +161,18 @@ function ListPage({ kind, id, label, badge }: Props) {
           status={status}
           now={now}
           onRetry={retry}
-          resetKey={`${kind}:${id}`}
+          resetKey={`${kind}:${id}:${first}`}
+          firstPr={first}
           emptyAction={
-            <Link to="/" className="btn-seam">
-              Browse the whole directory
-            </Link>
+            first ? (
+              <button type="button" className="btn-seam" onClick={() => setFirst(false)}>
+                Include repos that aren't first-PR friendly
+              </button>
+            ) : (
+              <Link to="/" className="btn-seam">
+                Browse the whole directory
+              </Link>
+            )
           }
         />
       </div>

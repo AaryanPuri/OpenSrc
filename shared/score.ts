@@ -36,7 +36,7 @@ export const GATE_LABELS: Record<Gate, string> = {
   mirror: 'A mirror',
   license: 'No license',
   stale: `No commit in ${MAX_IDLE_DAYS} days`,
-  issues: `Fewer than ${MIN_OPEN_ISSUES} good-first-issue or help-wanted issues`,
+  issues: `Fewer than ${MIN_OPEN_ISSUES} open good first issues or issues open to contributors`,
   stars: `Fewer than ${MIN_STARS} stars`,
 };
 

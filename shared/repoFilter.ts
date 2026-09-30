@@ -6,6 +6,7 @@
  */
 import { normalise, SINCE_DAYS } from './parse.js';
 import type { RepoRecord } from './repo.js';
+import { claimableGfi } from './score.js';
 import type { Difficulty, IssueType, ParsedQuery } from './types.js';
 
 export interface StarRange {
@@ -18,10 +19,12 @@ export interface RepoFilter {
   languages: string[];
   /** Field ids (OR). */
   fields: string[];
-  /** Minimum open good-first-issues ("beginner"). */
-  minGoodFirstIssues: number;
-  /** Needs open help-wanted issues ("help wanted", "intermediate"). */
-  helpWanted: boolean;
+  /**
+   * Only first-PR friendly repos: beginner wording ("beginner", "first PR", "easy")
+   * switches the directory's First-PR toggle on. Other difficulty words
+   * ("help wanted", "intermediate") don't narrow repos; they stay issue-level.
+   */
+  firstPr: boolean;
   /** Every keyword must appear in the name, description or topics. */
   keywords: string[];
   /** Last commit within this many days ("recent", "this week"). */
@@ -44,15 +47,21 @@ export interface IssueLevel {
   qualifiers: string[];
 }
 
-export type RepoSort = 'score' | 'stars' | 'recent' | 'gfi' | 'response';
-export const REPO_SORTS: RepoSort[] = ['score', 'stars', 'recent', 'gfi', 'response'];
+export type RepoSort = 'score' | 'claimable' | 'stars' | 'recent' | 'gfi' | 'response';
+export const REPO_SORTS: RepoSort[] = ['score', 'claimable', 'stars', 'recent', 'gfi', 'response'];
+
+/** The order when none was picked: unclaimed issues first for a first PR, else the score. */
+export const defaultRepoSort = (firstPr: boolean): RepoSort => (firstPr ? 'claimable' : 'score');
+
+/** Open good first issues nobody is assigned to (score.ts's estimate from the sampled newest ones). */
+export const claimableGfis = (r: Pick<RepoRecord, 'goodFirstIssues' | 'gfiSampled' | 'gfiUnassigned'>): number =>
+  claimableGfi(r);
 
 export function emptyRepoFilter(): RepoFilter {
   return {
     languages: [],
     fields: [],
-    minGoodFirstIssues: 0,
-    helpWanted: false,
+    firstPr: false,
     keywords: [],
     committedWithinDays: null,
     unanswered: false,
@@ -91,8 +100,7 @@ export function parsedToRepoFilter(p: ParsedQuery): { filter: RepoFilter; issueL
 
   filter.languages = [...p.languages];
   filter.fields = p.domains.map((d) => d.id);
-  if (p.difficulty === 'beginner') filter.minGoodFirstIssues = 1;
-  if (p.difficulty === 'help-wanted' || p.difficulty === 'intermediate') filter.helpWanted = true;
+  if (p.difficulty === 'beginner') filter.firstPr = true;
   if (p.since) filter.committedWithinDays = SINCE_DAYS[p.since];
   if (p.maxComments === 0) filter.unanswered = true;
   else if (p.maxComments !== null) issueLevel.maxComments = p.maxComments;
@@ -120,8 +128,7 @@ function haystack(r: RepoRecord): string {
 export function matchesRepoFilter(r: RepoRecord, f: RepoFilter, now: number): boolean {
   if (f.languages.length && !(r.language && f.languages.includes(r.language))) return false;
   if (f.fields.length && !r.fields.some((id) => f.fields.includes(id))) return false;
-  if (r.goodFirstIssues < f.minGoodFirstIssues) return false;
-  if (f.helpWanted && r.helpWanted < 1) return false;
+  if (f.firstPr && !r.firstPrFriendly) return false;
   if (f.unanswered && r.gfiUnanswered < 1) return false;
   if (f.repos.length && !f.repos.includes(r.fullName.toLowerCase())) return false;
   if (f.owners.length && !f.owners.includes(r.owner.toLowerCase())) return false;
@@ -155,19 +162,22 @@ const byName = (a: RepoRecord, b: RepoRecord) =>
       ? 1
       : 0;
 
+/** Fastest first; unknown response times go last; 0 when both are unknown. */
+const byResponse = (a: RepoRecord, b: RepoRecord) => {
+  if (a.responseHours === null || b.responseHours === null) {
+    return a.responseHours === b.responseHours ? 0 : a.responseHours === null ? 1 : -1;
+  }
+  return a.responseHours - b.responseHours;
+};
+
 const COMPARATORS: Record<RepoSort, (a: RepoRecord, b: RepoRecord) => number> = {
   score: (a, b) => b.score - a.score || b.stars - a.stars,
+  // Most unclaimed good first issues, then the quickest maintainers, then the score.
+  claimable: (a, b) => claimableGfis(b) - claimableGfis(a) || byResponse(a, b) || b.score - a.score,
   stars: (a, b) => b.stars - a.stars || b.score - a.score,
   recent: (a, b) => Date.parse(b.lastCommitAt) - Date.parse(a.lastCommitAt) || b.score - a.score,
   gfi: (a, b) => b.goodFirstIssues - a.goodFirstIssues || b.score - a.score,
-  // Fastest first; unknown response times go last.
-  response: (a, b) => {
-    if (a.responseHours === null || b.responseHours === null) {
-      if (a.responseHours !== b.responseHours) return a.responseHours === null ? 1 : -1;
-      return b.score - a.score;
-    }
-    return a.responseHours - b.responseHours || b.score - a.score;
-  },
+  response: (a, b) => byResponse(a, b) || b.score - a.score,
 };
 
 /** A sorted copy; ties fall back to score, then name, so the order is deterministic. */

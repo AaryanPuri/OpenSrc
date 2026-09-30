@@ -6,8 +6,9 @@ export interface RepoUrlState {
   q: string;
   /** A `q` param is present (even empty): the directory shows results rather than its landing. */
   browsing: boolean;
-  sort: RepoSort;
-  /** `first=1`: only first-PR friendly repos. */
+  /** The sort picked (`sort=`), or null for the mode's default (see repoView). */
+  sort: RepoSort | null;
+  /** `first=1`: only first-PR friendly repos (beginner wording in `q` also turns it on). */
   first: boolean;
   demo: boolean;
 }
@@ -19,7 +20,7 @@ function read(p: URLSearchParams): RepoUrlState {
   return {
     q: q?.trim() ?? '',
     browsing: q !== null,
-    sort: sort && REPO_SORTS.includes(sort) ? sort : 'score',
+    sort: sort && REPO_SORTS.includes(sort) ? sort : null,
     first: p.get('first') === '1',
     demo: demo === '1' || demo === 'true',
   };
@@ -46,7 +47,7 @@ export function useRepoUrlState() {
       const p = new URLSearchParams(loc.search);
       if (patch.q !== undefined) p.set('q', patch.q);
       if (patch.sort !== undefined) {
-        if (patch.sort === 'score') p.delete('sort');
+        if (patch.sort === null) p.delete('sort');
         else p.set('sort', patch.sort);
       }
       if (patch.first !== undefined) {

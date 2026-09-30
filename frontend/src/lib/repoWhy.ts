@@ -12,7 +12,7 @@ import {
   scoreRepo,
   GATE_LABELS,
 } from '../../../shared/score';
-import { compactNumber, plural, replyTime, timeAgo } from './format';
+import { compactNumber, plural, replyTime, timeAgo, welcomeIssues } from './format';
 
 export interface ScoreLine {
   part: keyof ScoreParts;
@@ -37,8 +37,8 @@ export function scoreLines(r: RepoRecord, now: number): ScoreLine[] {
   const reason: Record<keyof ScoreParts, string> = {
     supply:
       r.goodFirstIssues === 0
-        ? `no open good first issues${r.helpWanted ? `, ${plural(r.helpWanted, 'help-wanted issue')}` : ''}`
-        : `${plural(claimableGfi(r), 'unclaimed good first issue')} of ${r.goodFirstIssues} open${r.helpWanted ? `, and ${r.helpWanted} help wanted` : ''}`,
+        ? `no open good first issues${r.helpWanted ? `, ${welcomeIssues(r.helpWanted)}` : ''}`
+        : `${plural(claimableGfi(r), 'unclaimed good first issue')} of ${r.goodFirstIssues} open${r.helpWanted ? `, and ${welcomeIssues(r.helpWanted)}` : ''}`,
     activity: r.lastCommitAt ? `last commit ${timeAgo(r.lastCommitAt, now)}` : 'last commit unknown',
     response:
       r.responseHours === null

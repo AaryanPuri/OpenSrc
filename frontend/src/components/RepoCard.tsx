@@ -3,9 +3,10 @@ import { Bookmark, CircleCheck, MessageSquareReply, Star } from 'lucide-react';
 import { memo, useRef } from 'react';
 import { Link } from 'react-router';
 import type { RepoRecord } from '../../../shared/repo';
+import { claimableGfis } from '../../../shared/repoFilter';
 import { FIRST_PR_MIN_SCORE } from '../../../shared/score';
 import { fabricStyle } from '../lib/fabric';
-import { compactNumber, plural, replyTime } from '../lib/format';
+import { compactNumber, replyTime, welcomeIssues } from '../lib/format';
 import { committedAgo, fieldLabel, languageColor, repoFabric, repoPath } from '../lib/repoDisplay';
 import { FieldBadge } from './FieldBadge';
 import { NeedleIcon, RepoAvatar } from './icons';
@@ -21,6 +22,8 @@ interface Props {
   search?: string;
   /** Sample / offline mode: no remote avatars. */
   offline?: boolean;
+  /** First-PR mode: the stat line leads with unclaimed good first issues and reply time. */
+  firstPr?: boolean;
 }
 
 /** "First-PR friendly": a basted-on ribbon (the dashed stitch reserved for signature spots). */
@@ -37,7 +40,15 @@ export function FirstPrRibbon({ className = '' }: { className?: string }) {
   );
 }
 
-export const RepoCard = memo(function RepoCard({ repo, now, saved, onToggleSave, search = '', offline }: Props) {
+export const RepoCard = memo(function RepoCard({
+  repo,
+  now,
+  saved,
+  onToggleSave,
+  search = '',
+  offline,
+  firstPr = false,
+}: Props) {
   const saveBtn = useRef<HTMLButtonElement>(null);
   const titleId = `repo-${repo.fullName.replace(/[^a-z0-9]/gi, '-')}`;
   const fabric = repoFabric(repo);
@@ -89,20 +100,48 @@ export const RepoCard = memo(function RepoCard({ repo, now, saved, onToggleSave,
           {repo.description ?? <span className="italic text-subtle">No description</span>}
         </p>
 
-        {/* 3. Good first issues, big; help wanted, small */}
-        <div className="mt-3.5 flex flex-wrap items-center gap-x-2.5 gap-y-2">
-          <span className="patch h-9 gap-2 px-2.5" data-testid="gfi-tag">
-            <span className="font-display text-[20px] font-[600] leading-none tabular-nums text-accent">
-              {repo.goodFirstIssues}
+        {/* 3. The stat line. First-PR mode: unclaimed good first issues, big, and reply time.
+            Otherwise: good first issues, big; contributions welcome, small. */}
+        {firstPr ? (
+          <div className="mt-3.5 flex flex-wrap items-center gap-x-2.5 gap-y-2">
+            <span className="patch h-9 gap-2 px-2.5" data-testid="gfi-tag">
+              <span className="font-display text-[20px] font-[600] leading-none tabular-nums text-accent">
+                {claimableGfis(repo)}
+              </span>
+              <span className="text-[13px] leading-tight">
+                unclaimed good first {claimableGfis(repo) === 1 ? 'issue' : 'issues'}
+              </span>
             </span>
-            <span className="text-[13px] leading-tight">
-              good first {repo.goodFirstIssues === 1 ? 'issue' : 'issues'}
+            {repo.responseHours !== null && (
+              <span
+                className="inline-flex items-center gap-1 text-[12.5px] text-subtle"
+                title="Median time until a maintainer first replies"
+              >
+                <MessageSquareReply className="h-3.5 w-3.5" aria-hidden="true" />
+                replies in {replyTime(repo.responseHours)}
+              </span>
+            )}
+          </div>
+        ) : (
+          <div className="mt-3.5 flex flex-wrap items-center gap-x-2.5 gap-y-2">
+            <span className="patch h-9 gap-2 px-2.5" data-testid="gfi-tag">
+              <span className="font-display text-[20px] font-[600] leading-none tabular-nums text-accent">
+                {repo.goodFirstIssues}
+              </span>
+              <span className="text-[13px] leading-tight">
+                good first {repo.goodFirstIssues === 1 ? 'issue' : 'issues'}
+              </span>
             </span>
-          </span>
-          {repo.helpWanted > 0 && (
-            <span className="text-[12.5px] text-subtle">+{plural(repo.helpWanted, 'help wanted', 'help wanted')}</span>
-          )}
-        </div>
+            {repo.helpWanted > 0 && (
+              <span className="text-[12.5px] text-subtle">
+                +
+                {repo.helpWanted === 1
+                  ? welcomeIssues(1)
+                  : `${repo.helpWanted.toLocaleString('en')} contributions welcome`}
+              </span>
+            )}
+          </div>
+        )}
 
         {/* 4. Meta */}
         <ul
@@ -143,7 +182,7 @@ export const RepoCard = memo(function RepoCard({ repo, now, saved, onToggleSave,
               <span className="text-subtle">CONTRIBUTING</span>
             </li>
           )}
-          {repo.responseHours !== null && (
+          {!firstPr && repo.responseHours !== null && (
             <li className="inline-flex items-center gap-1" title="Median time until a maintainer first replies">
               <MessageSquareReply className="h-3.5 w-3.5" aria-hidden="true" />
               replies in {replyTime(repo.responseHours)}

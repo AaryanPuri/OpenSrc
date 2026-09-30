@@ -5,17 +5,27 @@ import { Link } from 'react-router';
 import { LanguageRow } from '../components/BrowseLinks';
 import { CollectionQuilt } from '../components/CollectionQuilt';
 import { Composer } from '../components/Composer';
+import { NeedleIcon } from '../components/icons';
 import { DomainQuilt, Hero } from '../components/Hero';
 import { RepoFilters } from '../components/RepoFilters';
 import { NewsletterForm } from '../components/NewsletterForm';
-import { RepoGrid } from '../components/RepoGrid';
+import { GridCount, RepoGrid } from '../components/RepoGrid';
 import { SaveSearchButton } from '../components/SaveSearchButton';
 import { useDocumentMeta } from '../hooks/useDocumentMeta';
 import { useRepoUrlState } from '../hooks/useRepoUrlState';
 import { useShell } from '../hooks/useShell';
 import { LIST_PAGE } from '../lib/listPages';
-import { setDifficulty, toggleDomain, toggleLanguage, type Chip, type ParsedQuery } from '../lib/parseQuery';
-import { REPO_SORT_LABELS, removeRepoChip, repoChips, repoSearchParams, useRepoResults } from '../lib/repoSearch';
+import { toggleDomain, toggleLanguage, type Chip, type ParsedQuery } from '../lib/parseQuery';
+import {
+  defaultRepoSort,
+  REPO_SORT_LABELS,
+  removeRepoChip,
+  repoChips,
+  repoSearchParams,
+  useRepoResults,
+  withoutFirstPrWords,
+  type RepoSort,
+} from '../lib/repoSearch';
 import { useSiteUrl } from '../seo/context';
 import { homeMeta, searchMeta } from '../seo/meta';
 
@@ -34,7 +44,12 @@ export function HomePage() {
   const [input, setInput] = useState(text);
   useEffect(() => setInput(text), [text, homeTick]);
 
-  const { status, results, parsed, meta, now, retry, repos, partial } = useRepoResults(text, url.sort, url.first);
+  // `first` and `sort` are what the grid shows: beginner wording turns first-PR mode on, and its default sort.
+  const { status, results, parsed, meta, now, retry, repos, partial, first, sort } = useRepoResults(
+    text,
+    url.sort,
+    url.first,
+  );
   const chips = useMemo(() => repoChips(parsed), [parsed]);
   const directorySize = meta?.count ?? repos.length;
   // A pre-rendered home page holds the first page of results; the count is the whole list's.
@@ -72,17 +87,33 @@ export function HomePage() {
     setUrl({ q });
   };
   const apply = (next: ParsedQuery) => refine(next.raw);
-  const onRemoveChip = (c: Chip) => apply(removeRepoChip(parsed, c));
+  /**
+   * The First-PR toggle. Off also takes out the beginner wording that may have
+   * switched it on, so the URL never holds "beginner" with the toggle off.
+   */
+  const setFirst = (on: boolean) => {
+    if (on) return setUrl({ first: true }, 'replace');
+    const next = withoutFirstPrWords(parsed);
+    if (next === parsed) return setUrl({ first: false }, 'replace');
+    const q = normalizeQueryText(next.raw);
+    setInput(q);
+    setUrl({ q, first: false }, 'replace');
+  };
+  const onRemoveChip = (c: Chip) => {
+    if (c.kind === 'difficulty' && c.id === 'beginner') return setFirst(false);
+    apply(removeRepoChip(parsed, c));
+  };
+  // Picking the mode's default order clears `sort=`, so the order follows the toggle again.
+  const setSort = (s: RepoSort) => setUrl({ sort: s === defaultRepoSort(first) ? null : s }, 'replace');
 
   const filters = (
     <RepoFilters
       parsed={parsed}
-      first={url.first}
-      sort={url.sort}
+      first={first}
+      sort={sort}
       meta={meta}
-      onFirst={(first) => setUrl({ first }, 'replace')}
-      onSort={(sort) => setUrl({ sort }, 'replace')}
-      onDifficulty={(d) => apply(setDifficulty(parsed, d))}
+      onFirst={setFirst}
+      onSort={setSort}
       onToggleLanguage={(id) => apply(toggleLanguage(parsed, id))}
       onToggleDomain={(id) => apply(toggleDomain(parsed, id))}
     />
@@ -97,11 +128,7 @@ export function HomePage() {
         <div className="flex min-h-11 flex-wrap items-center justify-between gap-x-4 gap-y-1">
           <h2 id="repos-title" className="font-display text-[22px] font-[560] tracking-[-0.01em]" aria-live="polite">
             {status === 'ready' ? (
-              <>
-                <span className="tabular-nums">{total.toLocaleString('en')}</span>{' '}
-                {url.first ? 'first-PR friendly ' : ''}
-                {total === 1 ? 'repo' : 'repos'}
-              </>
+              <GridCount total={total} first={first} />
             ) : status === 'error' ? (
               'Repos'
             ) : (
@@ -113,7 +140,7 @@ export function HomePage() {
           </h2>
           <p className="flex flex-wrap items-center gap-x-1 text-[13px] text-subtle">
             {text && <SaveSearchButton scope="repos" q={text} />}
-            {status === 'ready' && `by ${REPO_SORT_LABELS[url.sort].label.toLowerCase()}`}
+            {status === 'ready' && `by ${REPO_SORT_LABELS[sort].label.toLowerCase()}`}
             {text && (
               <>
                 {status === 'ready' && ' · '}
@@ -138,11 +165,12 @@ export function HomePage() {
             onRemoveChip={onRemoveChip}
             onRetry={retry}
             search={search}
-            resetKey={`${text}|${url.sort}|${url.first}`}
+            resetKey={`${text}|${sort}|${first}`}
             offline={url.demo}
+            firstPr={first}
             emptyAction={
-              url.first ? (
-                <button type="button" className="btn-seam" onClick={() => setUrl({ first: false }, 'replace')}>
+              first ? (
+                <button type="button" className="btn-seam" onClick={() => setFirst(false)}>
                   Include repos that aren't first-PR friendly
                 </button>
               ) : undefined
@@ -165,6 +193,27 @@ export function HomePage() {
           loading={false}
           mode="repos"
           repoCount={meta?.count}
+          hint={
+            first ? null : (
+              <p className="flex flex-wrap items-center gap-x-1.5 text-[13.5px] text-muted" data-testid="first-pr-hint">
+                <NeedleIcon className="h-3.5 w-3.5 shrink-0 text-accent" />
+                Looking for your first PR?
+                <Link
+                  to="/?first=1"
+                  preventScrollReset
+                  onClick={() =>
+                    requestAnimationFrame(() =>
+                      document.getElementById('directory')?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth' }),
+                    )
+                  }
+                  className="inline-flex min-h-11 items-center font-medium text-accent underline-offset-2 hover:underline sm:min-h-0"
+                  data-testid="first-pr-hint-link"
+                >
+                  Turn on First-PR friendly
+                </Link>
+              </p>
+            )
+          }
         />
         <CollectionQuilt
           repos={repos}
@@ -173,7 +222,7 @@ export function HomePage() {
           sub="Hand-cut views of the directory, for where you are right now."
         />
         <div className="mx-auto mt-12 max-w-6xl px-4 sm:px-6">
-          <div className="seam-t pt-8">
+          <div id="directory" className="seam-t scroll-mt-20 pt-8">
             <h2 className="sr-only">The directory</h2>
             {body}
           </div>

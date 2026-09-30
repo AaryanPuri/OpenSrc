@@ -3,9 +3,9 @@ import { ChevronDown, SlidersHorizontal } from 'lucide-react';
 import { useId, useState } from 'react';
 import type { DatasetMeta } from '../../../shared/repo';
 import { useMediaQuery } from '../hooks/useMediaQuery';
-import { DOMAINS, LANGUAGES, type Difficulty } from '../lib/dictionary';
+import { DOMAINS, LANGUAGES } from '../lib/dictionary';
 import type { ParsedQuery } from '../lib/parseQuery';
-import { REPO_SORT_LABELS, REPO_SORTS, type RepoSort } from '../lib/repoSearch';
+import { defaultRepoSort, REPO_SORT_LABELS, REPO_SORTS, type RepoSort } from '../lib/repoSearch';
 import { FieldBadge } from './FieldBadge';
 import { NeedleIcon } from './icons';
 
@@ -15,7 +15,6 @@ interface Props {
   sort: RepoSort;
   meta: DatasetMeta | null;
   onFirst: (on: boolean) => void;
-  onDifficulty: (d: Difficulty | null) => void;
   onToggleLanguage: (id: string) => void;
   onToggleDomain: (id: string) => void;
   onSort: (s: RepoSort) => void;
@@ -23,13 +22,54 @@ interface Props {
 
 const TOP = 8;
 
-/** Difficulty, as the directory reads it: which repos have issues at that level. */
-const LEVELS: { id: Difficulty | null; short: string; label: string }[] = [
-  { id: null, short: 'Any', label: 'Any repo' },
-  { id: 'beginner', short: 'First', label: 'Has good first issues' },
-  { id: 'help-wanted', short: 'Some exp.', label: 'Has help-wanted issues' },
-  { id: 'intermediate', short: 'Challenge', label: 'Has help-wanted issues, for a challenge' },
-];
+/**
+ * The directory's one audience switch: on, only repos ready for a first PR
+ * (unclaimed good first issues, a CONTRIBUTING guide, maintainers who reply);
+ * off, every project in the directory. No count here: the grid heading has it.
+ */
+export function FirstPrSwitch({
+  on,
+  onChange,
+  className = '',
+}: {
+  on: boolean;
+  onChange: (on: boolean) => void;
+  className?: string;
+}) {
+  const switchId = useId();
+  return (
+    <label
+      htmlFor={switchId}
+      className={`flex min-h-11 cursor-pointer items-center gap-3 rounded-[12px] px-3 py-2 transition-colors ${
+        on ? 'stitch bg-accent/[0.07]' : 'border border-line hover:border-line-strong'
+      } ${className}`}
+    >
+      <NeedleIcon className={`h-4 w-4 shrink-0 ${on ? 'text-accent' : 'text-muted'}`} />
+      <span className="min-w-0 flex-1">
+        <span className="block text-[13.5px] font-semibold leading-tight text-fg">First-PR friendly</span>
+        <span className="block text-balance text-[12px] leading-snug text-subtle">
+          Only repos ready for your first PR
+        </span>
+      </span>
+      <button
+        id={switchId}
+        type="button"
+        role="switch"
+        aria-checked={on}
+        onClick={() => onChange(!on)}
+        className={`touch relative h-6 w-10 shrink-0 rounded-full transition-colors ${on ? 'bg-accent' : 'bg-fg/20'}`}
+        data-testid="first-pr-switch"
+      >
+        <motion.span
+          className="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-surface shadow-sticker"
+          animate={{ x: on ? 16 : 0 }}
+          transition={{ type: 'spring', stiffness: 520, damping: 34 }}
+        />
+        <span className="sr-only">Only first-PR friendly repos</span>
+      </button>
+    </label>
+  );
+}
 
 function Group({ title, children }: { title: string; children: React.ReactNode }) {
   const id = useId();
@@ -47,11 +87,9 @@ function Group({ title, children }: { title: string; children: React.ReactNode }
 const byCount = (ids: string[], counts: Record<string, number> | undefined) =>
   [...ids].sort((a, b) => (counts?.[b] ?? 0) - (counts?.[a] ?? 0));
 
-function Body({ parsed, first, sort, meta, onFirst, onDifficulty, onToggleLanguage, onToggleDomain, onSort }: Props) {
+function Body({ parsed, first, sort, meta, onFirst, onToggleLanguage, onToggleDomain, onSort }: Props) {
   const [allLangs, setAllLangs] = useState(false);
   const [allDomains, setAllDomains] = useState(false);
-  const pill = useId();
-  const switchId = useId();
 
   const langOrder = byCount(
     LANGUAGES.map((l) => l.id).filter((id) => !meta || meta.languages[id]),
@@ -68,65 +106,7 @@ function Body({ parsed, first, sort, meta, onFirst, onDifficulty, onToggleLangua
 
   return (
     <div className="space-y-5">
-      {/* First-PR friendly switch */}
-      <label
-        htmlFor={switchId}
-        className={`flex min-h-11 cursor-pointer items-center gap-3 rounded-[12px] px-3 py-2 transition-colors ${
-          first ? 'stitch bg-accent/[0.07]' : 'border border-line hover:border-line-strong'
-        }`}
-      >
-        <NeedleIcon className={`h-4 w-4 shrink-0 ${first ? 'text-accent' : 'text-muted'}`} />
-        <span className="min-w-0 flex-1">
-          <span className="block text-[13.5px] font-semibold leading-tight text-fg">First-PR friendly</span>
-          <span className="block text-[12px] leading-snug text-subtle">
-            {meta ? `${meta.firstPrFriendly.toLocaleString('en')} repos` : 'Welcoming repos only'}
-          </span>
-        </span>
-        <button
-          id={switchId}
-          type="button"
-          role="switch"
-          aria-checked={first}
-          onClick={() => onFirst(!first)}
-          className={`touch relative h-6 w-10 shrink-0 rounded-full transition-colors ${first ? 'bg-accent' : 'bg-fg/20'}`}
-          data-testid="first-pr-switch"
-        >
-          <motion.span
-            className="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-surface shadow-sticker"
-            animate={{ x: first ? 16 : 0 }}
-            transition={{ type: 'spring', stiffness: 520, damping: 34 }}
-          />
-          <span className="sr-only">Only first-PR friendly repos</span>
-        </button>
-      </label>
-
-      <Group title="Difficulty">
-        <div className="grid grid-cols-4 rounded-[10px] bg-fg/[0.06] p-0.5 lg:grid-cols-2">
-          {LEVELS.map((d) => {
-            const active = parsed.difficulty === d.id;
-            return (
-              <button
-                key={d.id ?? 'any'}
-                type="button"
-                aria-pressed={active}
-                title={d.label}
-                aria-label={d.label}
-                onClick={() => onDifficulty(d.id)}
-                className={`relative h-11 rounded-[8px] px-1 text-[12.5px] font-medium transition-colors lg:h-8 ${active ? 'text-bg' : 'text-muted hover:text-fg'}`}
-              >
-                {active && (
-                  <motion.span
-                    layoutId={`${pill}-d`}
-                    className="absolute inset-0 rounded-[8px] bg-fg"
-                    transition={{ type: 'spring', stiffness: 480, damping: 36 }}
-                  />
-                )}
-                <span className="relative">{d.short}</span>
-              </button>
-            );
-          })}
-        </div>
-      </Group>
+      <FirstPrSwitch on={first} onChange={onFirst} />
 
       <Group title="Language">
         <div className="flex flex-wrap gap-1.5">
@@ -230,10 +210,9 @@ export function RepoFilters(props: Props) {
   const id = useId();
   const active =
     (props.first ? 1 : 0) +
-    (props.parsed.difficulty ? 1 : 0) +
     props.parsed.languages.length +
     props.parsed.domains.length +
-    (props.sort !== 'score' ? 1 : 0);
+    (props.sort !== defaultRepoSort(props.first) ? 1 : 0);
 
   if (desktop) {
     return (

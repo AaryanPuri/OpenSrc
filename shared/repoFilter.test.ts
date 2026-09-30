@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { parseQuery } from './parse';
 import type { RepoRecord } from './repo';
-import { applyRepoFilter, parsedToRepoFilter, parseStars, sortRepos } from './repoFilter';
+import {
+  applyRepoFilter,
+  claimableGfis,
+  defaultRepoSort,
+  parsedToRepoFilter,
+  parseStars,
+  sortRepos,
+} from './repoFilter';
 
 const NOW = Date.parse('2026-09-01T00:00:00Z');
 const daysAgo = (d: number) => new Date(NOW - d * 86_400_000).toISOString();
@@ -50,8 +57,11 @@ const REPOS = [
   repo('acme/rustdb', {
     fields: ['databases'],
     goodFirstIssues: 5,
+    gfiSampled: 5,
+    gfiUnassigned: 5,
     description: 'An embedded key value store',
     score: 80,
+    firstPrFriendly: true,
   }),
   repo('acme/gocli', { language: 'go', fields: ['cli'], helpWanted: 3, stars: 5000, lastCommitAt: daysAgo(40) }),
   repo('Other/web-ui', {
@@ -67,6 +77,8 @@ const REPOS = [
     language: 'python',
     fields: ['ml'],
     goodFirstIssues: 9,
+    gfiSampled: 9,
+    gfiUnassigned: 3,
     responseHours: 30,
     score: 80,
     stars: 900,
@@ -76,18 +88,35 @@ const REPOS = [
 const run = (q: string) => applyRepoFilter(REPOS, parsedToRepoFilter(parseQuery(q)).filter, NOW).map((r) => r.fullName);
 
 describe('parsedToRepoFilter', () => {
-  it('maps language, field and beginner', () => {
+  it('maps language, field, and beginner wording to first-PR friendly', () => {
     const { filter, issueLevel } = parsedToRepoFilter(parseQuery('beginner rust databases bugs'));
     expect(filter.languages).toEqual(['rust']);
     expect(filter.fields).toEqual(['databases']);
-    expect(filter.minGoodFirstIssues).toBe(1);
+    expect(filter.firstPr).toBe(true);
     expect(issueLevel.types).toEqual(['bug']);
     expect(issueLevel.difficulty).toBe('beginner');
     expect(run('beginner rust databases')).toEqual(['acme/rustdb']);
   });
 
-  it('help wanted, recency, unanswered', () => {
-    expect(run('help wanted')).toEqual(['acme/gocli']);
+  it('beginner rust repos: first-PR friendly Rust repos', () => {
+    const { filter } = parsedToRepoFilter(parseQuery('beginner rust repos'));
+    expect(filter.firstPr).toBe(true);
+    expect(filter.languages).toEqual(['rust']);
+    expect(filter.keywords).toEqual([]);
+    expect(run('easy first issues')).toEqual(['acme/rustdb']);
+  });
+
+  it('help wanted and intermediate are issue-level only: the repo set is unchanged', () => {
+    for (const q of ['help wanted', 'intermediate', 'challenging']) {
+      const { filter, issueLevel } = parsedToRepoFilter(parseQuery(q));
+      expect(filter.firstPr).toBe(false);
+      expect(issueLevel.difficulty).not.toBeNull();
+      expect(run(q)).toEqual(run(''));
+    }
+    expect(run('help wanted rust')).toEqual(run('rust'));
+  });
+
+  it('recency and unanswered', () => {
     expect(run('recent')).toEqual(['acme/rustdb', 'Other/web-ui', 'other/pyml']);
     expect(run('unanswered')).toEqual(['Other/web-ui']);
     const { filter, issueLevel } = parsedToRepoFilter(parseQuery('fewer than 5 comments'));
@@ -136,6 +165,22 @@ describe('sortRepos', () => {
     expect(names('stars')).toEqual(['Other/web-ui', 'acme/gocli', 'other/pyml', 'acme/rustdb']);
     expect(names('gfi')).toEqual(['other/pyml', 'acme/rustdb', 'Other/web-ui', 'acme/gocli']);
     expect(names('recent')[3]).toBe('acme/gocli');
+  });
+
+  it('claimable: most unclaimed good first issues, then fastest replies, then score', () => {
+    expect(REPOS.map(claimableGfis)).toEqual([5, 0, 0, 3]);
+    expect(names('claimable')).toEqual(['acme/rustdb', 'other/pyml', 'Other/web-ui', 'acme/gocli']);
+    const tie = [
+      repo('a/slow', { goodFirstIssues: 4, gfiSampled: 4, gfiUnassigned: 4, responseHours: 40, score: 99 }),
+      repo('b/fast', { goodFirstIssues: 4, gfiSampled: 4, gfiUnassigned: 4, responseHours: 2, score: 60 }),
+      repo('c/unknown', { goodFirstIssues: 4, gfiSampled: 4, gfiUnassigned: 4, score: 99 }),
+    ];
+    expect(sortRepos(tie, 'claimable').map((r) => r.fullName)).toEqual(['b/fast', 'a/slow', 'c/unknown']);
+  });
+
+  it('defaults to claimable for a first PR, else the score', () => {
+    expect(defaultRepoSort(true)).toBe('claimable');
+    expect(defaultRepoSort(false)).toBe('score');
   });
 
   it('response puts unknown last', () => {

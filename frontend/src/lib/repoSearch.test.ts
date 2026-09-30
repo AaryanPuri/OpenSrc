@@ -5,11 +5,15 @@ import { parseQuery } from './parseQuery';
 import { GOOD_FIRST_LABELS } from '../../../shared/labels';
 import {
   backToSearchPath,
+  defaultIssueTab,
   filterRepos,
+  issueLevelChips,
   readRepoQuery,
   removeRepoChip,
   repoChips,
   repoIssueQuery,
+  repoView,
+  withoutFirstPrWords,
   type RepoSort,
 } from './repoSearch';
 
@@ -71,8 +75,28 @@ const search = (q: string, sort: RepoSort = 'score', first = false) =>
   filterRepos(REPOS, readRepoQuery(parseQuery(q)), { sort, first, now: NOW }).map((r) => r.fullName);
 
 describe('repo search', () => {
-  it('beginner rust repos: rust repos with good first issues, best score first', () => {
-    expect(search('beginner friendly rust repos')).toEqual(['a/rust-top', 'b/rust-big', 'h/rust-stale']);
+  it('beginner rust repos: beginner wording turns first-PR mode on', () => {
+    expect(search('beginner friendly rust repos')).toEqual(['a/rust-top']);
+    const q = readRepoQuery(parseQuery('beginner friendly rust repos'));
+    expect(repoView(q, null, false)).toEqual({ first: true, sort: 'claimable' });
+    expect(repoView(q, 'stars', false)).toEqual({ first: true, sort: 'stars' });
+    expect(repoView(readRepoQuery(parseQuery('rust')), null, false)).toEqual({ first: false, sort: 'score' });
+    expect(repoView(readRepoQuery(parseQuery('rust')), null, true)).toEqual({ first: true, sort: 'claimable' });
+  });
+
+  it('help wanted and intermediate do not narrow repos', () => {
+    expect(search('help wanted rust')).toEqual(search('rust'));
+    expect(search('intermediate rust')).toEqual(search('rust'));
+    expect(readRepoQuery(parseQuery('intermediate')).filter.firstPr).toBe(false);
+  });
+
+  it('unpicking first-PR mode takes the beginner wording with it', () => {
+    const next = withoutFirstPrWords(parseQuery('beginner friendly rust repos'));
+    expect(next.difficulty).toBeNull();
+    expect(parseQuery(next.raw).languages).toEqual(['rust']);
+    expect(readRepoQuery(parseQuery(next.raw)).filter.firstPr).toBe(false);
+    const plain = parseQuery('rust');
+    expect(withoutFirstPrWords(plain)).toBe(plain);
   });
 
   it('sorts by stars, recency and good first issues', () => {
@@ -133,8 +157,17 @@ describe('repo-mode patches', () => {
     expect(chips.find((c) => c.kind === 'language')?.scope).toBeUndefined();
   });
 
-  it('says what difficulty means for repos', () => {
-    expect(repoChips(parseQuery('beginner rust'))[0].label).toBe('Good first issues');
+  it('says what difficulty means for repos: one First-PR patch, one Contributions welcome patch', () => {
+    expect(repoChips(parseQuery('beginner rust'))[0].label).toBe('First-PR friendly');
+    for (const q of ['help wanted', 'intermediate', 'challenging']) {
+      const [chip] = repoChips(parseQuery(q));
+      expect([q, chip.label, chip.scope]).toEqual([q, 'Contributions welcome', 'issues']);
+    }
+    // Repo pages don't show it as a narrowing patch; they open on that tab instead.
+    expect(issueLevelChips(parseQuery('help wanted rust'))).toEqual([]);
+    expect(defaultIssueTab(parseQuery('intermediate rust'))).toBe('help');
+    expect(defaultIssueTab(parseQuery('beginner rust'))).toBe('gfi');
+    expect(defaultIssueTab(null)).toBe('gfi');
   });
 });
 
@@ -181,5 +214,9 @@ describe('back to your search', () => {
     );
     expect(backToSearchPath(new URLSearchParams('q=rust&sort=score'))).toBe('/?q=rust');
     expect(backToSearchPath(new URLSearchParams('sort=stars'))).toBe('/');
+    // In first-PR mode the default is "most unclaimed", so a picked "best score" is kept.
+    expect(backToSearchPath(new URLSearchParams('q=rust&sort=score&first=1'))).toBe('/?q=rust&sort=score&first=1');
+    expect(backToSearchPath(new URLSearchParams('q=rust&sort=claimable&first=1'))).toBe('/?q=rust&first=1');
+    expect(backToSearchPath(new URLSearchParams('q=beginner rust&sort=claimable'))).toBe('/?q=beginner+rust');
   });
 });

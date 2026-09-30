@@ -34,6 +34,20 @@ interface Props {
   /** Changes when the result set does (a new search), so the list starts from the top again. */
   resetKey?: string;
   offline?: boolean;
+  /** First-PR mode: cards lead with unclaimed good first issues. */
+  firstPr?: boolean;
+}
+
+/** The grid heading's count: "12 projects", or "3 first-PR friendly repos" with the toggle on. */
+export function GridCount({ total, first }: { total: number; first: boolean }) {
+  return (
+    <>
+      <span className="tabular-nums" data-testid="repo-count">
+        {total.toLocaleString('en')}
+      </span>{' '}
+      {first ? `first-PR friendly ${total === 1 ? 'repo' : 'repos'}` : total === 1 ? 'project' : 'projects'}
+    </>
+  );
 }
 
 const GRID = 'grid grid-cols-1 gap-3.5 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3';
@@ -51,6 +65,7 @@ export function RepoGrid({
   search,
   resetKey,
   offline,
+  firstPr = false,
 }: Props) {
   const enter = useEntrance();
   const { isRepoSaved, onToggleRepoSave } = useShell();
@@ -104,6 +119,7 @@ export function RepoGrid({
               onToggleSave={onToggleRepoSave}
               search={search}
               offline={offline}
+              firstPr={firstPr}
             />
           </motion.li>
         ))}

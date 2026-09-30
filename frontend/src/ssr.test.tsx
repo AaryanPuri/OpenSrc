@@ -65,15 +65,21 @@ describe('server rendering', () => {
     expect(html).toContain('An open-source repository finder');
     expect(html).toContain('data-testid="collection-quilt"');
     expect(html.match(/data-testid="repo-card"/g)).toHaveLength(repos.length);
-    expect(text(html)).toContain(`${repos.length} repos`);
+    expect(text(html)).toContain(`${repos.length} projects`);
+    expect(html).toContain('data-testid="first-pr-hint"');
+    expect(html).not.toContain('>Difficulty<');
     expect(html).toContain(`href="/repo/${star.fullName}"`);
     expect(fetch).not.toHaveBeenCalled();
   });
 
-  it('filters the directory with ?q=', () => {
+  it('filters the directory with ?q=; beginner wording turns first-PR mode on', () => {
     const html = render('/?q=beginner%20rust%20repos');
     expect(html).toContain('beginner rust repos</textarea>');
-    expect(html.match(/data-testid="repo-card"/g)).toHaveLength(rust.length);
+    const friendly = rust.filter((r) => r.firstPrFriendly).length;
+    expect(html.match(/data-testid="repo-card"/g)).toHaveLength(friendly);
+    expect(text(html)).toContain(`${friendly} first-PR friendly repo${friendly === 1 ? '' : 's'}`);
+    expect(text(html)).toContain('by most unclaimed issues');
+    expect(text(render('/?q=rust'))).toContain(`${rust.length} projects`);
     expect(html).toContain('href="/issues?q=beginner%20rust%20repos"');
     // Cards carry the search to the repo page.
     expect(html).toContain(`href="/repo/${star.fullName}?q=beginner+rust+repos"`);
@@ -133,6 +139,8 @@ describe('server rendering', () => {
     const lang = text(render('/language/rust'));
     expect(lang).toContain('Rust repos to contribute to');
     expect(lang).toContain(`OpenSrc lists ${rust.length} Rust repositories`);
+    expect(lang).toContain(`${rust.length} projects`);
+    expect(lang).toContain('Only repos ready for your first PR');
     expect(render('/language/rust')).toContain(`href="/repo/${star.fullName}"`);
     expect(text(render('/field/compilers'))).toContain('Compilers &amp; Languages open-source projects');
     expect(render('/collections')).toContain('data-testid="collection-block"');

@@ -1,5 +1,5 @@
 /**
- * A repo page's live issues (Good first / Help wanted / All tabs), searched on
+ * A repo page's live issues (Good first / Contributions welcome / All tabs), searched on
  * GitHub from the browser. Loaded lazily after hydration (see RepoPage), so the
  * issue cards and the search code stay out of the pre-rendered pages' main chunk.
  */
@@ -12,22 +12,31 @@ import { useEntrance } from '../hooks/useEntrance';
 import { useSearch } from '../hooks/useSearch';
 import { useShell } from '../hooks/useShell';
 import { parseQuery } from '../lib/parseQuery';
-import { issueLevelChips, repoIssueQuery, ISSUE_TABS, type IssueTab } from '../lib/repoSearch';
+import {
+  defaultIssueTab,
+  HELP_WANTED_NAME,
+  issueLevelChips,
+  repoIssueQuery,
+  ISSUE_TABS,
+  type IssueTab,
+} from '../lib/repoSearch';
 import { IssueCard } from './IssueCard';
 import { IssueCardSkeleton } from './IssueCardSkeleton';
 import { Patch } from './Patches';
 import { EmptyState, ErrorState, Notice } from './ResultStates';
 
-const TAB_LABEL: Record<IssueTab, string> = { gfi: 'Good first issues', help: 'Help wanted', all: 'All open' };
+const TAB_LABEL: Record<IssueTab, string> = { gfi: 'Good first issues', help: HELP_WANTED_NAME, all: 'All open' };
 
 export default function RepoIssues({ repo }: { repo: RepoRecord }) {
   const { theme, token, isSaved, onToggleSave, openSettings } = useShell();
   const [params, setParams] = useSearchParams();
   const enter = useEntrance();
-  const tab = (ISSUE_TABS as string[]).includes(params.get('tab') ?? '') ? (params.get('tab') as IssueTab) : 'gfi';
   const q = params.get('q')?.trim() ?? '';
   const demo = params.get('demo') === '1';
   const parsed = useMemo(() => (q ? parseQuery(q) : null), [q]);
+  const tab = (ISSUE_TABS as string[]).includes(params.get('tab') ?? '')
+    ? (params.get('tab') as IssueTab)
+    : defaultIssueTab(parsed);
   const extraChips = useMemo(() => (parsed ? issueLevelChips(parsed) : []), [parsed]);
   const narrowing = extraChips.length ? parsed : null;
   const narrowedQuery = repoIssueQuery(repo, tab, narrowing);
@@ -81,7 +90,7 @@ export default function RepoIssues({ repo }: { repo: RepoRecord }) {
               role="tab"
               aria-selected={active}
               aria-controls="repo-issues"
-              onClick={() => setParam('tab', t === 'gfi' ? null : t)}
+              onClick={() => setParam('tab', t === defaultIssueTab(parsed) ? null : t)}
               className={`relative h-11 shrink-0 whitespace-nowrap rounded-full px-3.5 text-[13px] font-medium transition-colors sm:h-9 ${active ? 'text-bg' : 'text-muted hover:text-fg'}`}
               data-testid="issue-tab"
             >

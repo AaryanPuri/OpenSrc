@@ -10,6 +10,7 @@ import { GOOD_FIRST_LABELS, HELP_WANTED_LABELS, isGoodFirstLabel, isHelpWantedLa
 import type { RepoRecord } from '../../../shared/repo';
 import {
   applyRepoFilter,
+  defaultRepoSort,
   parsedToRepoFilter,
   REPO_SORTS,
   sortRepos,
@@ -31,10 +32,11 @@ import {
 } from './parseQuery';
 
 export type { RepoSort } from '../../../shared/repoFilter';
-export { REPO_SORTS } from '../../../shared/repoFilter';
+export { claimableGfis, defaultRepoSort, REPO_SORTS } from '../../../shared/repoFilter';
 
 export const REPO_SORT_LABELS: Record<RepoSort, { label: string; hint: string }> = {
   score: { label: 'Best score', hint: 'Most welcoming to new contributors first' },
+  claimable: { label: 'Most unclaimed issues', hint: 'Most unassigned good first issues first' },
   stars: { label: 'Most stars', hint: 'Biggest projects first' },
   recent: { label: 'Latest commit', hint: 'Most recently active first' },
   gfi: { label: 'Most good first issues', hint: 'Most open good first issues first' },
@@ -113,26 +115,62 @@ export function filterRepos(repos: RepoRecord[], q: RepoQuery, opts: RepoFilterO
   return sortRepos(out, opts.sort);
 }
 
-/** Directory results for `?q=&sort=&first=`, recomputed only when one of them (or the data) changes. */
-export function useRepoResults(q: string, sort: RepoSort, first: boolean) {
+/**
+ * The directory's mode and order for `?q=&sort=&first=`: first-PR mode is on with
+ * `first=1` or beginner wording in the query ("beginner rust repos"), and with no
+ * `sort` picked it orders by unclaimed issues (else by score).
+ */
+export function repoView(q: RepoQuery, sortParam: RepoSort | null, firstParam: boolean) {
+  const first = firstParam || q.filter.firstPr;
+  return { first, sort: sortParam ?? defaultRepoSort(first) };
+}
+
+/**
+ * Directory results for `?q=&sort=&first=`, recomputed only when one of them (or the
+ * data) changes. `sortParam` is null when none was picked; `first` and `sort` in the
+ * result are what the page is actually showing.
+ */
+export function useRepoResults(q: string, sortParam: RepoSort | null, firstParam: boolean) {
   const dataset = useDataset();
   const parsed = useMemo(() => parseQuery(q), [q]);
   const query = useMemo(() => readRepoQuery(parsed), [parsed]);
+  const { first, sort } = repoView(query, sortParam, firstParam);
   const repos = useMemo(
     () => filterRepos(dataset.repos, query, { sort, first, now: dataset.now }),
     [dataset.repos, dataset.now, query, sort, first],
   );
-  return { ...dataset, parsed, query, results: repos };
+  return { ...dataset, parsed, query, first, sort, results: repos };
+}
+
+/**
+ * The query with its beginner wording taken out: the First-PR toggle going off (or
+ * its patch being unpicked) takes the words that switched it on with it, so the
+ * URL never says "beginner" with the toggle off.
+ */
+export function withoutFirstPrWords(parsed: ParsedQuery): ParsedQuery {
+  return parsed.difficulty === 'beginner' ? removeChip(parsed, { kind: 'difficulty', id: 'beginner' }) : parsed;
 }
 
 /* ------------------------------------------------------------------ */
 /* Patches, as the directory reads them                                */
 /* ------------------------------------------------------------------ */
 
-const REPO_DIFFICULTY: Record<string, { label: string; detail: string }> = {
-  beginner: { label: 'Good first issues', detail: 'repos with open good first issues' },
-  'help-wanted': { label: 'Help wanted', detail: 'repos with open help-wanted issues' },
-  intermediate: { label: 'Help wanted', detail: 'repos with open help-wanted issues' },
+/** The display name for help-wanted issues (the GitHub labels themselves are unchanged). */
+export const HELP_WANTED_NAME = 'Contributions welcome';
+
+const REPO_DIFFICULTY: Record<string, Pick<Chip, 'label' | 'detail' | 'scope'>> = {
+  beginner: { label: 'First-PR friendly', detail: 'only repos ready for your first PR' },
+  // "help wanted", "intermediate" and "challenge" don't narrow repos: they open repo pages on that tab.
+  'help-wanted': {
+    label: HELP_WANTED_NAME,
+    detail: 'applies to issues: opens repos on their Contributions welcome tab',
+    scope: 'issues',
+  },
+  intermediate: {
+    label: HELP_WANTED_NAME,
+    detail: 'applies to issues: opens repos on their Contributions welcome tab',
+    scope: 'issues',
+  },
 };
 
 const REPO_SINCE: Record<string, string> = {
@@ -189,10 +227,11 @@ export function removeRepoChip(parsed: ParsedQuery, chip: Pick<Chip, 'kind' | 'i
   return removeChip(parsed, chip);
 }
 
-/** `q=…&sort=…&first=1` for a directory search (the default sort is left out). */
+/** `q=…&sort=…&first=1` for a directory search (a sort that is the default for its mode is left out). */
 export function repoSearchParams(q: string, sort: string | null, first: boolean): string {
   const params = new URLSearchParams({ q });
-  if (sort && sort !== REPO_SORTS[0]) params.set('sort', sort);
+  const known = sort && (REPO_SORTS as string[]).includes(sort) ? (sort as RepoSort) : null;
+  if (known && known !== repoView(readRepoQuery(parseQuery(q)), null, first).sort) params.set('sort', known);
   if (first) params.set('first', '1');
   return params.toString();
 }
@@ -281,5 +320,12 @@ export function repoIssueQuery(
 
 /** The issue-level patches of a directory search, for "narrowed by your search" on a repo page. */
 export function issueLevelChips(parsed: ParsedQuery): Chip[] {
-  return repoChips(parsed).filter((c) => c.scope === 'issues' || (c.kind === 'activity' && c.id === '0'));
+  return repoChips(parsed).filter(
+    (c) => c.kind !== 'difficulty' && (c.scope === 'issues' || (c.kind === 'activity' && c.id === '0')),
+  );
+}
+
+/** The tab a repo page opens on: Contributions welcome for "help wanted" / "intermediate" searches. */
+export function defaultIssueTab(parsed: ParsedQuery | null): IssueTab {
+  return parsed?.difficulty === 'help-wanted' || parsed?.difficulty === 'intermediate' ? 'help' : 'gfi';
 }

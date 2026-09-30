@@ -307,7 +307,7 @@ function Facts({ repo, now, languagePage }: { repo: RepoRecord; now: number; lan
     ['Last commit', repo.lastCommitAt ? committedAgo(repo.lastCommitAt, now).replace(/^committed /, '') : 'Unknown'],
     ['Replies in', repo.responseHours === null ? 'Not measured' : replyTime(repo.responseHours)],
     ['Good first issues', repo.goodFirstIssues.toLocaleString('en')],
-    ['Help wanted', repo.helpWanted.toLocaleString('en')],
+    ['Contributions welcome', repo.helpWanted.toLocaleString('en')],
     [
       'Language',
       repo.languageName && languagePage ? (

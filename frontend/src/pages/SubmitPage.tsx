@@ -61,7 +61,7 @@ const GATE_PASS: Record<Gate, string> = {
   mirror: 'Not a mirror',
   license: 'Has a license',
   stale: `A commit in the last ${MAX_IDLE_DAYS} days`,
-  issues: `At least ${MIN_OPEN_ISSUES} good-first-issue or help-wanted issues`,
+  issues: `At least ${MIN_OPEN_ISSUES} open good first issues or issues open to contributors`,
   stars: `At least ${MIN_STARS} stars`,
 };
 

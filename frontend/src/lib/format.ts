@@ -141,6 +141,9 @@ export function plural(n: number, one: string, many = `${one}s`): string {
   return `${n.toLocaleString('en')} ${n === 1 ? one : many}`;
 }
 
+/** Help-wanted issues in prose ("3 issues open to contributors"); the UI calls them "Contributions welcome". */
+export const welcomeIssues = (n: number) => plural(n, 'issue open to contributors', 'issues open to contributors');
+
 /** Trust signal: when was this last touched, and is it going stale (> 6 months)? */
 export function activity(issue: Pick<Issue, 'updatedAt'>, now = Date.now()): { label: string; stale: boolean } {
   const days = (now - Date.parse(issue.updatedAt)) / 86_400_000;

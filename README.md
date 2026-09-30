@@ -64,7 +64,7 @@ OpenSrc checks that for you. Every night it scans GitHub for active projects wit
     </td>
     <td width="50%" valign="top">
       <h3>📋 A page for every repo</h3>
-      <p>Facts, a <strong>"why this score"</strong> breakdown, three "Start here" links, and <strong>live, unassigned issues</strong> straight from GitHub in Good first / Help wanted / All tabs.</p>
+      <p>Facts, a <strong>"why this score"</strong> breakdown, three "Start here" links, and <strong>live, unassigned issues</strong> straight from GitHub in Good first / Contributions welcome / All tabs.</p>
       <img src="docs/images/repo.png" alt="The FreeCAD repo page with Start here links, live issues and facts" />
     </td>
   </tr>
@@ -94,14 +94,14 @@ OpenSrc checks that for you. Every night it scans GitHub for active projects wit
 
 Every listed repo gets a **contributor-friendliness score from 0 to 100**, rebuilt nightly from GitHub data.
 
-| Part                    | Weight | What it measures                                                                        |
-| :---------------------- | -----: | :-------------------------------------------------------------------------------------- |
-| **Issues to pick from** |     30 | Unclaimed (unassigned) good first issues, plus a little for help-wanted, on a log scale |
-| **Recent activity**     |     15 | How recently the default branch saw a commit                                            |
-| **Maintainer replies**  |     20 | Median time for a maintainer to first reply to a new issue                              |
-| **Onboarding**          |     10 | CONTRIBUTING guide, code of conduct, a clear description                                |
-| **Up for grabs**        |     15 | Share of good first issues that are still unassigned                                    |
-| **Reach**               |     10 | Stars, damped so big names don't dominate                                               |
+| Part                    | Weight | What it measures                                                                                                      |
+| :---------------------- | -----: | :-------------------------------------------------------------------------------------------------------------------- |
+| **Issues to pick from** |     30 | Unclaimed (unassigned) good first issues, plus a little for issues open to contributors (help wanted), on a log scale |
+| **Recent activity**     |     15 | How recently the default branch saw a commit                                                                          |
+| **Maintainer replies**  |     20 | Median time for a maintainer to first reply to a new issue                                                            |
+| **Onboarding**          |     10 | CONTRIBUTING guide, code of conduct, a clear description                                                              |
+| **Up for grabs**        |     15 | Share of good first issues that are still unassigned                                                                  |
+| **Reach**               |     10 | Stars, damped so big names don't dominate                                                                             |
 
 A repo is marked **🪡 First-PR friendly** when it scores **70 or more**, has **at least 3 unclaimed good first issues**, has a **CONTRIBUTING guide**, and maintainers reply **within 3 days** (or there isn't enough data yet). About a quarter of listed repos qualify.
 
@@ -112,7 +112,7 @@ Good first issues are counted across the label spellings projects really use (`g
 
 <br />
 
-A repo isn't listed if it is archived, a fork or a mirror; has no license; has had no commit in the last 180 days; has fewer than 2 open good-first-issue or help-wanted issues; or has fewer than 30 stars (unless it was added by hand). The formula lives in [`shared/score.ts`](shared/score.ts).
+A repo isn't listed if it is archived, a fork or a mirror; has no license; has had no commit in the last 180 days; has fewer than 2 open good first issues or issues open to contributors (help wanted); or has fewer than 30 stars (unless it was added by hand). The formula lives in [`shared/score.ts`](shared/score.ts).
 
 </details>
 
