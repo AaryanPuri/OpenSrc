@@ -19,7 +19,7 @@ import type { RepoRecord } from "../../../shared/repo.js";
 import { collect } from "./collect.js";
 import { emptyCuration, fieldOverride, parseCuration, type Curation } from "./curation.js";
 import { GraphQLClient, RateLimitAbort } from "./graphql.js";
-import { buildMeta, mergeDatasets, withScore } from "./merge.js";
+import { buildMeta, mergeDatasets, notAfter, withScore } from "./merge.js";
 import { summarizeChanges } from "./summary.js";
 import { validateDataset } from "./validate.js";
 import { readCurationText, readDataset, writeDataset } from "./write.js";
@@ -194,7 +194,9 @@ export async function runRescore(dataDir: string, log: (msg: string) => void = c
   const now = Date.parse(meta.generatedAt);
   const next = repos.map((r) => {
     const fields = fieldOverride(curation, r.fullName) ?? classifyRepo(r);
-    return withScore({ ...r, fields }, now).record;
+    const lastCommitAt = notAfter(r.lastCommitAt, now, meta.generatedAt);
+    const createdAt = notAfter(r.createdAt, now, meta.generatedAt);
+    return withScore({ ...r, fields, lastCommitAt, createdAt }, now).record;
   });
   const nextMeta = buildMeta(next, meta);
   await writeDataset(dataDir, next, nextMeta);

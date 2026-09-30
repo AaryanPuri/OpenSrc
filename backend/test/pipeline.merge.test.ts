@@ -45,6 +45,13 @@ describe("mergeDatasets", () => {
     expect(byName["a/two"].firstSeenAt).toBe(later.toISOString());
   });
 
+  it("clamps commit dates from a committer clock that is ahead to the collection time", () => {
+    const future = new Date(NOW.getTime() + 5 * 86_400_000).toISOString();
+    const { repos, meta } = merge({ collected: [record("a/one", { lastCommitAt: future })] });
+    expect(repos[0].lastCommitAt).toBe(NOW.toISOString());
+    expect(validateDataset(serializeRepos(repos), serializeMeta(meta), emptyCuration())).toEqual([]);
+  });
+
   it("reuses response samples younger than 7 days", () => {
     const prev = record("a/one", { responseHours: 9, responseSampledAt: daysAgo(3) });
     const stale = record("a/two", { responseHours: 9, responseSampledAt: daysAgo(8) });

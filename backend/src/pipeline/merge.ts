@@ -53,6 +53,9 @@ export function withScore(r: RepoRecord, now: number): { record: RepoRecord; gat
 
 const key = (fullName: string) => fullName.toLowerCase();
 
+/** A timestamp from the future (a skewed committer clock) is clamped to the collection time. */
+export const notAfter = (iso: string, nowMs: number, nowIso: string) => (Date.parse(iso) > nowMs ? nowIso : iso);
+
 export function mergeDatasets(input: MergeInput): MergeResult {
   const nowMs = input.now.getTime();
   const nowIso = input.now.toISOString();
@@ -65,7 +68,13 @@ export function mergeDatasets(input: MergeInput): MergeResult {
   }
   for (const fresh of input.collected) {
     const prev = prevByName.get(key(fresh.fullName));
-    const r: RepoRecord = { ...fresh, firstSeenAt: prev?.firstSeenAt ?? nowIso };
+    const r: RepoRecord = {
+      ...fresh,
+      // Commit dates come from the committer's clock, which can be ahead of ours.
+      lastCommitAt: notAfter(fresh.lastCommitAt, nowMs, nowIso),
+      createdAt: notAfter(fresh.createdAt, nowMs, nowIso),
+      firstSeenAt: prev?.firstSeenAt ?? nowIso,
+    };
     if (!r.responseSampledAt && prev && !needsResponseSample(prev, nowMs)) {
       r.responseHours = prev.responseHours;
       r.responseSampledAt = prev.responseSampledAt;

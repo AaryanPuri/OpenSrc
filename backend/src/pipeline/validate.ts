@@ -88,8 +88,10 @@ function validateRecord(r: RepoRecord, now: number, errors: string[]): void {
   if (missing.length || errors.length >= MAX_ERRORS) return;
 
   if (r.fullName !== `${r.owner}/${r.name}`) err("fullName is not owner/name");
-  for (const k of ["lastCommitAt", "createdAt", "firstSeenAt"] as const)
+  for (const k of ["lastCommitAt", "createdAt", "firstSeenAt"] as const) {
     if (!isIso(r[k])) err(`${k} is not an ISO date`);
+    else if (Date.parse(r[k]) > now) err(`${k} is after meta.generatedAt`);
+  }
   if (r.responseSampledAt !== null && !isIso(r.responseSampledAt)) err("responseSampledAt is not an ISO date");
   if (r.language !== null && !LANGUAGE_IDS.has(r.language)) err(`unknown language ${r.language}`);
   if (r.fields.length > 3) err("more than 3 fields");
