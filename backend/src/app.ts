@@ -12,7 +12,9 @@ import { mailFromEnv, type MailProvider } from "./mail/index.js";
 import { csrf, isLocalOrigin } from "./middleware/csrf.js";
 import type { TokenBucket } from "./middleware/rateLimit.js";
 import { registerNewsletter } from "./routes/newsletter.js";
+import { registerRepoIssues } from "./routes/repoIssues.js";
 import { registerSaved } from "./routes/saved.js";
+import { cacheKey, defaultJsonCache, type JsonCache } from "./sharedCache.js";
 import type {
   Difficulty,
   Env,
@@ -42,7 +44,15 @@ export interface AppOptions {
   clientIp?: (c: Ctx) => string | null;
   /** Newsletter sign-up rate limiter (tests). */
   newsletterLimiter?: TokenBucket;
+  /**
+   * Response cache shared by every Worker isolate (tests inject one). Default: the Cache API
+   * where the runtime has it (Workers), else an in-memory cache for this app.
+   */
+  cache?: JsonCache;
 }
+
+/** Live search results in the shared cache (the GitHub client also keeps its own per-isolate copy). */
+const SEARCH_SHARED_TTL_MS = 5 * 60 * 1000;
 
 const DIFFICULTIES: Difficulty[] = ["beginner", "help-wanted", "intermediate"];
 const TYPES: IssueType[] = ["bug", "docs", "feature", "tests"];
@@ -93,6 +103,9 @@ export function createApp(opts: AppOptions = {}) {
   const app = new Hono<AppEnv>();
 
   const getEnv = (bindings: Env | undefined): Env => ({ ...(opts.env ?? {}), ...(bindings ?? {}) });
+  // Resolved on first use: `caches` is a request-time global on Workers.
+  let jsonCache: JsonCache | undefined;
+  const cache = () => (jsonCache ??= opts.cache ?? defaultJsonCache());
 
   const deps: Deps = {
     env: (c) => getEnv(c.env),
@@ -132,6 +145,7 @@ export function createApp(opts: AppOptions = {}) {
   registerAuth(app, deps);
   registerSaved(app, deps);
   registerNewsletter(app, deps, { limiter: opts.newsletterLimiter });
+  registerRepoIssues(app, deps, cache);
 
   app.get("/api/parse", async (c) => {
     const q = (c.req.query("q") ?? "").slice(0, MAX_QUERY_LEN);
@@ -179,6 +193,16 @@ export function createApp(opts: AppOptions = {}) {
 
     if (demo) return c.json(fixtures());
 
+    // Raw queries (the frontend's path) are shared across Worker isolates: the search quota is
+    // 30 a minute for the whole site. Only live answers are stored, never samples.
+    const sharedKey = isRaw
+      ? cacheKey(new URL(c.req.url).origin, "search", { gq: githubQuery, page, sort, order })
+      : null;
+    if (sharedKey) {
+      const hit = await cache().get<SearchResponse>(sharedKey);
+      if (hit) return c.json(hit, 200, { "x-cache": "hit" });
+    }
+
     try {
       const r = await searchIssues(githubQuery, {
         page,
@@ -195,6 +219,7 @@ export function createApp(opts: AppOptions = {}) {
         source: "github",
         rateLimit: r.rateLimit,
       };
+      if (sharedKey) await cache().put(sharedKey, body, SEARCH_SHARED_TTL_MS);
       return c.json(body);
     } catch (err) {
       const gh = err instanceof GithubError ? err : undefined;

@@ -13,6 +13,8 @@ import {
   type CompactDataset,
 } from './dataset';
 import { LANGUAGES } from './dictionary';
+import { collectionById, collectionContext } from '../../../shared/collections';
+import { pageDataFor, prepareSite, toInitialDataset, type PageData } from '../data/pageData';
 
 const root = new URL('../../../data/', import.meta.url);
 const repos = JSON.parse(readFileSync(new URL('repos.json', root), 'utf8')) as RepoRecord[];
@@ -21,6 +23,47 @@ const label = (id: string) => LANGUAGES.find((l) => l.id === id)?.label ?? null;
 
 const HOUR = 3_600_000;
 const near = (a: string, b: string) => Math.abs(Date.parse(a) - Date.parse(b)) <= HOUR / 2;
+
+describe('Fresh this week after the index round-trip', () => {
+  // The live case: bootstrap at 08:07:40, built at 18:32:00. Rounding 10h24m to the nearest
+  // hour put every bootstrap repo at 08:32, after bootstrapAt, so all of them looked fresh.
+  const bootstrapAt = '2026-09-29T08:07:40.575Z';
+  const generatedAt = '2026-09-29T18:32:00.483Z';
+  const at = (fullName: string, firstSeenAt: string): RepoRecord => ({ ...repos[0], fullName, firstSeenAt });
+  const list = [
+    at('a/bootstrap', bootstrapAt),
+    at('b/bootstrap', '2026-09-29T08:07:39.000Z'),
+    at('c/later-run', '2026-09-29T18:32:00.483Z'),
+    at('d/next-hour', '2026-09-29T09:10:00.000Z'),
+  ];
+  const m: DatasetMeta = { ...meta, generatedAt, bootstrapAt, count: list.length };
+
+  it('keeps bootstrap repos out, and the rest in', () => {
+    const back = expandDataset(compactDataset(list, generatedAt), label);
+    const fresh = collectionById('fresh')!;
+    const ctx = collectionContext(m);
+    expect(ctx.bootstrapAt).toBe(Date.parse(bootstrapAt));
+    expect(back.filter((r) => fresh.includes(r, ctx)).map((r) => r.fullName)).toEqual(['c/later-run', 'd/next-hour']);
+  });
+
+  it('carries bootstrapAt through the page data a pre-rendered page inlines', () => {
+    const site = prepareSite(list, m);
+    const pd = JSON.parse(
+      JSON.stringify(
+        pageDataFor(
+          site,
+          { kind: 'collection', path: '/collections/fresh', id: 'fresh' },
+          { siteUrl: '', indexUrl: '' },
+        ),
+      ),
+    ) as PageData;
+    expect(pd.meta.bootstrapAt).toBe(bootstrapAt);
+    expect(pd.view?.total).toBe(2);
+    const initial = toInitialDataset(pd);
+    expect(initial.meta.bootstrapAt).toBe(bootstrapAt);
+    expect(initial.repos?.map((r) => r.fullName).sort()).toEqual(['c/later-run', 'd/next-hour']);
+  });
+});
 
 describe('compact repo index', () => {
   const compact = compactDataset(repos, meta.generatedAt);
@@ -50,7 +93,10 @@ describe('compact repo index', () => {
       });
       // Times are kept to the hour.
       expect(near(x.lastCommitAt, r.lastCommitAt)).toBe(true);
-      expect(near(x.firstSeenAt, r.firstSeenAt)).toBe(true);
+      // First-seen times are rounded down to the hour before (never later than the real time).
+      const early = Date.parse(r.firstSeenAt) - Date.parse(x.firstSeenAt);
+      expect(early).toBeGreaterThanOrEqual(0);
+      expect(early).toBeLessThan(HOUR);
       // The language name comes back from the dictionary, or as stored when the id is unknown.
       expect(x.languageName).toBe(r.language ? label(r.language) : r.languageName);
     });

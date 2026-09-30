@@ -33,6 +33,8 @@ export interface Issue {
    * GitHub token; undefined means "unknown", and the UI then shows nothing.
    */
   linkedPr?: boolean;
+  /** Someone is assigned (repo pages list assigned issues too, tagged). */
+  assigned?: boolean;
 }
 
 export type SortKey = 'best' | 'newest' | 'comments';

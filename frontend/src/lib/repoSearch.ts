@@ -6,8 +6,8 @@
  */
 import { useMemo } from 'react';
 import { FAST_RESPONSE_HOURS } from '../../../shared/collections';
-import { GOOD_FIRST_LABELS, HELP_WANTED_LABELS, isGoodFirstLabel, isHelpWantedLabel } from '../../../shared/labels';
 import type { RepoRecord } from '../../../shared/repo';
+import type { IssueTab } from '../../../shared/repoIssues';
 import {
   applyRepoFilter,
   defaultRepoSort,
@@ -19,17 +19,7 @@ import {
   type RepoSort,
 } from '../../../shared/repoFilter';
 import { useDataset } from '../data/dataset';
-import {
-  BASE_QUALIFIERS,
-  buildGitHubQuery,
-  emptyQuery,
-  getChips,
-  parseQuery,
-  removeChip,
-  toQueryText,
-  type Chip,
-  type ParsedQuery,
-} from './parseQuery';
+import { getChips, parseQuery, removeChip, toQueryText, type Chip, type ParsedQuery } from './parseQuery';
 
 export type { RepoSort } from '../../../shared/repoFilter';
 export { claimableGfis, defaultRepoSort, REPO_SORTS } from '../../../shared/repoFilter';
@@ -244,86 +234,10 @@ export function backToSearchPath(params: URLSearchParams): string {
 }
 
 /* ------------------------------------------------------------------ */
-/* A repo page's live issues                                           */
+/* A repo page's live issues (shared/repoIssues.ts, lib/repoIssues.ts)  */
 /* ------------------------------------------------------------------ */
 
-export type IssueTab = 'gfi' | 'help' | 'all';
-export const ISSUE_TABS: IssueTab[] = ['gfi', 'help', 'all'];
-
-/**
- * Label spellings searched per tab when a repo's own spellings aren't known (the
- * index doesn't carry them): the most common ones.
- */
-const TAB_LABELS: Record<Exclude<IssueTab, 'all'>, string[]> = {
-  gfi: GOOD_FIRST_LABELS.filter((l) =>
-    [
-      'good first issue',
-      'good-first-issue',
-      'good first issues',
-      'first-timers-only',
-      'beginner',
-      'beginner friendly',
-      'easy',
-      'E-easy',
-    ].includes(l),
-  ),
-  help: HELP_WANTED_LABELS.filter((l) =>
-    ['help wanted', 'help-wanted', 'status: help wanted', 'up-for-grabs', 'contributions welcome'].includes(l),
-  ),
-};
-
-/** GitHub rejects longer search queries. */
-export const MAX_ISSUE_QUERY = 256;
-
-const labelQualifier = (labels: string[]) => `label:${labels.map((l) => `"${l.replace(/"/g, '')}"`).join(',')}`;
-
-/** The spellings to search on a tab: the ones the repo's issues use, else the common ones. */
-export function tabLabels(repo: Pick<RepoRecord, 'issueLabels'>, tab: Exclude<IssueTab, 'all'>): string[] {
-  const own = (repo.issueLabels ?? []).filter(tab === 'gfi' ? isGoodFirstLabel : isHelpWantedLabel);
-  return own.length ? own : TAB_LABELS[tab];
-}
-
-/**
- * `repo:o/n is:issue is:open no:assignee label:"good first issue",…` plus the
- * issue-level parts of the directory search (kind of work, comment ceiling,
- * label qualifiers), so "rust docs" on the home page shows docs issues here.
- * Label spellings are dropped from the end until it fits in 256 characters.
- */
-export function repoIssueQuery(
-  repo: Pick<RepoRecord, 'fullName' | 'issueLabels'>,
-  tab: IssueTab,
-  parsed: ParsedQuery | null = null,
-): string {
-  const head = [`repo:${repo.fullName}`, ...BASE_QUALIFIERS].join(' ');
-  let rest = '';
-  if (parsed) {
-    const { issueLevel } = readRepoQuery(parsed);
-    const extra: ParsedQuery = {
-      ...emptyQuery(),
-      types: issueLevel.types,
-      maxComments: parsed.maxComments,
-      qualifiers: issueLevel.qualifiers,
-    };
-    // With no difficulty, language or field, the built query is the base qualifiers plus the extras.
-    const built = buildGitHubQuery(extra);
-    const prefix = BASE_QUALIFIERS.join(' ');
-    rest = (built.startsWith(prefix) ? built.slice(prefix.length) : built).trim();
-  }
-  const join = (labels: string[]) =>
-    [head, labels.length ? labelQualifier(labels) : '', rest].filter(Boolean).join(' ');
-  if (tab === 'all') return join([]);
-  const labels = tabLabels(repo, tab);
-  let n = labels.length;
-  while (n > 1 && join(labels.slice(0, n)).length > MAX_ISSUE_QUERY) n--;
-  return join(labels.slice(0, n));
-}
-
-/** The issue-level patches of a directory search, for "narrowed by your search" on a repo page. */
-export function issueLevelChips(parsed: ParsedQuery): Chip[] {
-  return repoChips(parsed).filter(
-    (c) => c.kind !== 'difficulty' && (c.scope === 'issues' || (c.kind === 'activity' && c.id === '0')),
-  );
-}
+export { ISSUE_TABS, type IssueTab } from '../../../shared/repoIssues';
 
 /** The tab a repo page opens on: Contributions welcome for "help wanted" / "intermediate" searches. */
 export function defaultIssueTab(parsed: ParsedQuery | null): IssueTab {

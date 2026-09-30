@@ -1,8 +1,6 @@
 /** Small display helpers for repos and collections, shared by cards and pages. */
 import { Landmark, MessageCircleQuestion, Sparkles, Sprout, Zap, type LucideIcon } from 'lucide-react';
-import { useMemo } from 'react';
-import { COLLECTIONS, collectionContext } from '../../../shared/collections';
-import type { DatasetMeta, RepoRecord } from '../../../shared/repo';
+import type { RepoRecord } from '../../../shared/repo';
 import { DOMAINS, LANGUAGES } from './dictionary';
 import { domainFabric, fabricFor, type Fabric } from './fabric';
 import { shortAgo } from './format';
@@ -38,12 +36,3 @@ export const COLLECTION_LOOK: Record<string, { fabric: Fabric; icon: LucideIcon 
   'big-names': { fabric: domainFabric('blockchain'), icon: Landmark },
   'fast-responders': { fabric: domainFabric('networking'), icon: Zap },
 };
-
-/** Repos per collection, or null until the directory has loaded. */
-export function useCollectionCounts(repos: RepoRecord[], meta: DatasetMeta | null): Record<string, number> | null {
-  return useMemo(() => {
-    if (!meta) return null;
-    const ctx = collectionContext(meta);
-    return Object.fromEntries(COLLECTIONS.map((c) => [c.id, repos.filter((r) => c.includes(r, ctx)).length]));
-  }, [repos, meta]);
-}

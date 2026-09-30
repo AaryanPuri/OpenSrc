@@ -17,8 +17,6 @@ export interface PartialView {
   anySearch?: boolean;
   /** How many repos the page's whole list has; the slice holds the first ones. */
   total?: number;
-  /** Repos per collection, over the whole directory. */
-  collections?: Record<string, number>;
   /** Summary of the page's whole list (language and field pages). */
   stats?: ListStats;
 }

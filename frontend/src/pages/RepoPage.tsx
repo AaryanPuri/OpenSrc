@@ -11,10 +11,11 @@ import {
   ListTodo,
   Sprout,
 } from 'lucide-react';
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router';
 import { flagIssueUrl } from '../../../shared/issueForms';
 import type { RepoRecord } from '../../../shared/repo';
+import { githubIssuesUrl, type TabCounts } from '../../../shared/repoIssues';
 import { FieldBadge } from '../components/FieldBadge';
 import { GitHubMark, RepoAvatar } from '../components/icons';
 import { IssueCardSkeleton } from '../components/IssueCardSkeleton';
@@ -30,7 +31,8 @@ import { backToSearchPath } from '../lib/repoSearch';
 import { fabricStyle } from '../lib/fabric';
 import { hasLanguagePage } from '../lib/listPages';
 import { committedAgo, fieldLabel, languageColor, repoFabric, scoreLevel } from '../lib/repoDisplay';
-import { plural, replyTime } from '../lib/format';
+import { plural, replyTime, snapshotNote } from '../lib/format';
+import { repoTabLabels } from '../lib/repoIssues';
 import { failedGateLabels, firstPrChecks, scoreLines } from '../lib/repoWhy';
 import { useSiteUrl } from '../seo/context';
 import { repoMeta } from '../seo/meta';
@@ -54,8 +56,12 @@ function IssuesPlaceholder() {
  * The full record (homepage, topics, whole description): handed over with a
  * pre-rendered page, else fetched from /data/repo/…; the index is enough until then.
  */
-function useRepoDetail(fullName: string | null, known: RepoRecord | undefined) {
+function useRepoDetail(
+  fullName: string | null,
+  known: RepoRecord | undefined,
+): { detail: RepoRecord | null; settled: boolean } {
   const [fetched, setFetched] = useState<RepoRecord | null>(null);
+  const [failed, setFailed] = useState<string | null>(null);
   useEffect(() => {
     if (!fullName || known) return;
     const c = new AbortController();
@@ -63,12 +69,16 @@ function useRepoDetail(fullName: string | null, known: RepoRecord | undefined) {
       .then((r) => (r.ok ? (r.json() as Promise<RepoRecord>) : null))
       .then((d) => {
         if (d && d.fullName === fullName) setFetched(d);
+        else setFailed(fullName);
       })
-      .catch(() => {});
+      .catch(() => {
+        if (!c.signal.aborted) setFailed(fullName);
+      });
     return () => c.abort();
   }, [fullName, known]);
-  if (known) return known;
-  return fetched && fetched.fullName === fullName ? fetched : null;
+  if (known) return { detail: known, settled: true };
+  const detail = fetched && fetched.fullName === fullName ? fetched : null;
+  return { detail, settled: !!detail || failed === fullName };
 }
 
 /** One repo: facts, why it scores what it does, where to start, and its open issues, live. */
@@ -80,12 +90,22 @@ export function RepoPage() {
     () => dataset.repos.find((r) => r.fullName.toLowerCase() === wanted) ?? null,
     [dataset.repos, wanted],
   );
-  const detail = useRepoDetail(indexed?.fullName ?? null, indexed ? dataset.details[indexed.fullName] : undefined);
-  // The index's numbers stay authoritative (same snapshot); the detail adds what the index leaves out.
+  const { detail, settled } = useRepoDetail(
+    indexed?.fullName ?? null,
+    indexed ? dataset.details[indexed.fullName] : undefined,
+  );
+  // The index's numbers stay authoritative (same snapshot); the detail adds what the index leaves out,
+  // including the label spellings the live issue tabs ask GitHub for.
   const repo = useMemo(
     () =>
       indexed && detail
-        ? { ...indexed, description: detail.description, homepage: detail.homepage, topics: detail.topics }
+        ? {
+            ...indexed,
+            description: detail.description,
+            homepage: detail.homepage,
+            topics: detail.topics,
+            issueLabels: detail.issueLabels ?? [],
+          }
         : indexed,
     [indexed, detail],
   );
@@ -103,10 +123,21 @@ export function RepoPage() {
   if (dataset.status !== 'ready') return <RepoPageSkeleton />;
   if (!repo) return <UnknownRepo fullName={`${owner}/${name}`} />;
   const languagePage = !!repo.language && !!dataset.meta && hasLanguagePage(dataset.meta, repo.language);
-  return <RepoView repo={repo} now={dataset.now} languagePage={languagePage} />;
+  return <RepoView repo={repo} now={dataset.now} languagePage={languagePage} labelsKnown={settled} />;
 }
 
-function RepoView({ repo, now, languagePage }: { repo: RepoRecord; now: number; languagePage: boolean }) {
+function RepoView({
+  repo,
+  now,
+  languagePage,
+  labelsKnown,
+}: {
+  repo: RepoRecord;
+  now: number;
+  languagePage: boolean;
+  /** The full record has arrived (or won't): live issues can ask with the repo's own label spellings. */
+  labelsKnown: boolean;
+}) {
   const site = useSiteUrl();
   useDocumentMeta(useMemo(() => repoMeta(site, repo), [site, repo]));
   const { isRepoSaved, onToggleRepoSave } = useShell();
@@ -118,7 +149,11 @@ function RepoView({ repo, now, languagePage }: { repo: RepoRecord; now: number; 
   const saved = isRepoSaved(repo.fullName);
   const fabric = repoFabric(repo);
   const gh = `https://github.com/${repo.fullName}`;
-  const gfiUrl = `${gh}/issues?q=${encodeURIComponent('is:issue is:open label:"good first issue"')}`;
+  const gfiUrl = githubIssuesUrl(repo.fullName, 'gfi', repoTabLabels(repo).gfi);
+  // GitHub's own counts, once the live tabs have them; until then the nightly numbers, labelled so.
+  const [live, setLive] = useState<{ repo: string; counts: TabCounts } | null>(null);
+  const liveCounts = live?.repo === repo.fullName ? live.counts : null;
+  const onCounts = useCallback((counts: TabCounts) => setLive({ repo: repo.fullName, counts }), [repo.fullName]);
 
   return (
     <div className="mx-auto max-w-6xl px-4 pb-24 pt-5 sm:px-6 sm:pt-8">
@@ -210,7 +245,7 @@ function RepoView({ repo, now, languagePage }: { repo: RepoRecord; now: number; 
                 href={gfiUrl}
                 icon={Sprout}
                 title="Good first issues"
-                hint={`${plural(repo.goodFirstIssues, 'open issue')} on GitHub`}
+                hint={liveCounts ? `${plural(liveCounts.gfi, 'open issue')} on GitHub` : 'The open ones, on GitHub'}
               />
               <StartStep n={3} href={`${gh}/issues`} icon={ListTodo} title="All issues" hint="Everything that's open" />
             </ol>
@@ -222,11 +257,11 @@ function RepoView({ repo, now, languagePage }: { repo: RepoRecord; now: number; 
               <h2 id="issues-title" className="font-display text-[22px] font-[560] tracking-[-0.01em]">
                 Open issues, live
               </h2>
-              <p className="text-xs text-subtle">Unassigned, straight from GitHub</p>
+              <p className="text-xs text-subtle">Every open issue, straight from GitHub</p>
             </div>
-            {hydrated ? (
+            {hydrated && labelsKnown ? (
               <Suspense fallback={<IssuesPlaceholder />}>
-                <RepoIssues key={repo.fullName} repo={repo} />
+                <RepoIssues key={repo.fullName} repo={repo} onCounts={onCounts} />
               </Suspense>
             ) : (
               <IssuesPlaceholder />
@@ -235,7 +270,7 @@ function RepoView({ repo, now, languagePage }: { repo: RepoRecord; now: number; 
         </div>
 
         <aside className="min-w-0 space-y-8" aria-label="About this repo">
-          <Facts repo={repo} now={now} languagePage={languagePage} />
+          <Facts repo={repo} now={now} languagePage={languagePage} live={liveCounts} />
           <WhyScore repo={repo} now={now} />
           <a
             href={flagIssueUrl(repo.fullName)}
@@ -292,7 +327,31 @@ function StartStep({
   );
 }
 
-function Facts({ repo, now, languagePage }: { repo: RepoRecord; now: number; languagePage: boolean }) {
+function Facts({
+  repo,
+  now,
+  languagePage,
+  live,
+}: {
+  repo: RepoRecord;
+  now: number;
+  languagePage: boolean;
+  /** GitHub's live counts, which replace the nightly ones once the issue tabs have loaded. */
+  live: TabCounts | null;
+}) {
+  const issueCount = (n: number | undefined, nightly: number) =>
+    n !== undefined ? (
+      <span title="Live from GitHub" data-testid="live-count">
+        {n.toLocaleString('en')}
+      </span>
+    ) : (
+      <span title={`Counted ${snapshotNote(now)}`}>
+        {nightly.toLocaleString('en')}
+        <span className="ml-1 text-xs font-normal text-subtle">
+          {snapshotNote(now).replace(/^as of the (.*) nightly update$/, 'on $1')}
+        </span>
+      </span>
+    );
   const dot = (
     <span
       className="h-2.5 w-2.5 rounded-full ring-1 ring-inset ring-black/10"
@@ -306,8 +365,8 @@ function Facts({ repo, now, languagePage }: { repo: RepoRecord; now: number; lan
     ['License', repo.license === 'other' ? 'Custom' : (repo.license ?? 'None')],
     ['Last commit', repo.lastCommitAt ? committedAgo(repo.lastCommitAt, now).replace(/^committed /, '') : 'Unknown'],
     ['Replies in', repo.responseHours === null ? 'Not measured' : replyTime(repo.responseHours)],
-    ['Good first issues', repo.goodFirstIssues.toLocaleString('en')],
-    ['Contributions welcome', repo.helpWanted.toLocaleString('en')],
+    ['Good first issues', issueCount(live?.gfi, repo.goodFirstIssues)],
+    ['Contributions welcome', issueCount(live?.help, repo.helpWanted)],
     [
       'Language',
       repo.languageName && languagePage ? (

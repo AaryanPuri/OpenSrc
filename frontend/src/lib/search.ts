@@ -109,7 +109,8 @@ interface BackendSearchResponse {
   fallbackReason?: 'rate-limit' | 'unavailable';
 }
 
-interface BackendIssue {
+/** An issue as the API sends it (`/api/search` and `/api/repo-issues`). */
+export interface BackendIssue {
   id: number;
   number: number;
   title: string;
@@ -122,6 +123,7 @@ interface BackendIssue {
   bodyExcerpt: string;
   author: string;
   linkedPr?: boolean;
+  assigned?: boolean;
 }
 
 async function fetchFromBackend(
@@ -182,7 +184,7 @@ async function fetchFromBackend(
   };
 }
 
-function fromBackendIssue(i: BackendIssue): Issue {
+export function fromBackendIssue(i: BackendIssue): Issue {
   const [owner, name] = i.repo.fullName.split('/');
   return {
     id: i.id,
@@ -205,6 +207,7 @@ function fromBackendIssue(i: BackendIssue): Issue {
     updatedAt: i.updatedAt,
     author: i.author ? { login: i.author, avatarUrl: `https://github.com/${i.author}.png?size=40` } : null,
     ...(typeof i.linkedPr === 'boolean' ? { linkedPr: i.linkedPr } : {}),
+    ...(i.assigned ? { assigned: true } : {}),
   };
 }
 

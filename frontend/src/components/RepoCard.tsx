@@ -6,7 +6,7 @@ import type { RepoRecord } from '../../../shared/repo';
 import { claimableGfis } from '../../../shared/repoFilter';
 import { FIRST_PR_MIN_SCORE } from '../../../shared/score';
 import { fabricStyle } from '../lib/fabric';
-import { compactNumber, replyTime, welcomeIssues } from '../lib/format';
+import { compactNumber, replyTime, snapshotNote, welcomeIssues } from '../lib/format';
 import { committedAgo, fieldLabel, languageColor, repoFabric, repoPath } from '../lib/repoDisplay';
 import { FieldBadge } from './FieldBadge';
 import { NeedleIcon, RepoAvatar } from './icons';
@@ -104,7 +104,7 @@ export const RepoCard = memo(function RepoCard({
             Otherwise: good first issues, big; contributions welcome, small. */}
         {firstPr ? (
           <div className="mt-3.5 flex flex-wrap items-center gap-x-2.5 gap-y-2">
-            <span className="patch h-9 gap-2 px-2.5" data-testid="gfi-tag">
+            <span className="patch h-9 gap-2 px-2.5" data-testid="gfi-tag" title={`Counted ${snapshotNote(now)}`}>
               <span className="font-display text-[20px] font-[600] leading-none tabular-nums text-accent">
                 {claimableGfis(repo)}
               </span>
@@ -124,7 +124,7 @@ export const RepoCard = memo(function RepoCard({
           </div>
         ) : (
           <div className="mt-3.5 flex flex-wrap items-center gap-x-2.5 gap-y-2">
-            <span className="patch h-9 gap-2 px-2.5" data-testid="gfi-tag">
+            <span className="patch h-9 gap-2 px-2.5" data-testid="gfi-tag" title={`Counted ${snapshotNote(now)}`}>
               <span className="font-display text-[20px] font-[600] leading-none tabular-nums text-accent">
                 {repo.goodFirstIssues}
               </span>
@@ -133,7 +133,7 @@ export const RepoCard = memo(function RepoCard({
               </span>
             </span>
             {repo.helpWanted > 0 && (
-              <span className="text-[12.5px] text-subtle">
+              <span className="text-[12.5px] text-subtle" title={`Counted ${snapshotNote(now)}`}>
                 +
                 {repo.helpWanted === 1
                   ? welcomeIssues(1)
@@ -194,7 +194,8 @@ export const RepoCard = memo(function RepoCard({
         <div className="mt-auto flex min-h-6 flex-wrap items-center gap-x-2 gap-y-2 pt-4">
           <span className="text-[12px] font-medium text-subtle">Score</span>
           <ScoreStitches score={repo.score} />
-          {repo.firstPrFriendly && <FirstPrRibbon className="ml-auto" />}
+          {/* In first-PR mode every card qualifies, so the ribbon would only be noise. */}
+          {repo.firstPrFriendly && !firstPr && <FirstPrRibbon className="ml-auto" />}
         </div>
       </div>
     </article>

@@ -20,6 +20,8 @@ export interface Collection {
   id: string;
   title: string;
   description: string;
+  /** A few words for the collection's quilt block. */
+  blurb: string;
   sort: RepoSort;
   includes: (repo: RepoRecord, ctx: CollectionContext) => boolean;
 }
@@ -30,6 +32,7 @@ export const COLLECTIONS: Collection[] = [
     title: 'Best for a first PR',
     description:
       'First-PR friendly repos: plenty of good first issues, a CONTRIBUTING guide and maintainers who reply.',
+    blurb: 'Ready for your first pull request.',
     sort: 'score',
     includes: (r) => r.firstPrFriendly,
   },
@@ -37,6 +40,7 @@ export const COLLECTIONS: Collection[] = [
     id: 'fresh',
     title: 'Fresh this week',
     description: `Repos that joined the directory in the last ${FRESH_DAYS} days.`,
+    blurb: 'New to the directory this week.',
     sort: 'score',
     includes: (r, ctx) => {
       const seen = Date.parse(r.firstSeenAt);
@@ -49,6 +53,7 @@ export const COLLECTIONS: Collection[] = [
     id: 'unanswered',
     title: 'Unanswered issues',
     description: 'Good first issues nobody has replied to yet. Be the first one there.',
+    blurb: 'Issues nobody has answered yet.',
     sort: 'score',
     includes: (r) => r.gfiUnanswered > 0,
   },
@@ -56,6 +61,7 @@ export const COLLECTIONS: Collection[] = [
     id: 'big-names',
     title: 'Big-name repos',
     description: `Projects with ${BIG_NAME_STARS / 1000}k+ stars and at least ${BIG_NAME_MIN_GFI} good first issues.`,
+    blurb: 'Famous projects with easy issues.',
     sort: 'stars',
     includes: (r) => r.stars >= BIG_NAME_STARS && r.goodFirstIssues >= BIG_NAME_MIN_GFI,
   },
@@ -63,6 +69,7 @@ export const COLLECTIONS: Collection[] = [
     id: 'fast-responders',
     title: 'Fast responders',
     description: `Maintainers who usually reply within ${FAST_RESPONSE_HOURS} hours.`,
+    blurb: 'Maintainers who reply within a day.',
     sort: 'response',
     includes: (r) => r.responseHours !== null && r.responseHours <= FAST_RESPONSE_HOURS,
   },

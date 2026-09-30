@@ -77,6 +77,12 @@ Optional accounts and newsletter (each switches itself off when unset; setup in 
   - `demo=1` forces the bundled sample data.
   - Page size is 20 and pages are capped at 50.
 
+- `GET /api/repo-issues?repo=owner/name&tab=gfi|help|all&gfi=<labels>&help=<labels>&after=<cursor>` is a repo page's live issues (`src/routes/repoIssues.ts`, rules in `shared/repoIssues.ts`). It never uses issue search and never serves sample data.
+  - Each tab is exactly GitHub's set: every open issue (assigned or not, never a PR) carrying one of the tab's label spellings, OR-ed (`gfi`/`help` are comma lists, at most 5, else the common spellings); `all` is every open issue. Newest first, 20 a page.
+  - With `GITHUB_TOKEN`: one GraphQL request (core quota) that also returns the exact open count of all three tabs. Without: the REST issues list, one request per spelling (at most 3), merged, and `counts: null`.
+  - Returns `{ items, hasMore, next, counts: { all, gfi, help } | null, labels, source: "github", via: "graphql"|"rest", rateLimit? }`; items are the `/api/search` Issue shape plus `assigned`. Pass `next` back as `after`.
+  - Errors: 400 `{ error: "invalid", field }`, 404 `{ error: "repo_not_found" }`, 429 `{ error: "rate_limited", resetAt }` (epoch ms or null), 503 `{ error: "unavailable" }`.
+
 - Accounts and newsletter (below): `/api/auth/*`, `/api/me`, `/api/saved*`, `/api/newsletter/*`. They answer
   `503 {"error":"feature disabled"}` when their configuration is missing.
 
@@ -164,6 +170,7 @@ This is the same builder the frontend uses, so `/api/search?q=` and the frontend
 ## Caching and fallback
 
 - Search results are cached for 5 minutes, keyed by query, page and sort.
+- A cache shared by every Worker isolate (`src/sharedCache.ts`): the Cache API (`caches.default`) on Workers, an in-memory cache on Node. It holds `/api/repo-issues` answers for 90 seconds and live `/api/search?gq=` answers for 5 minutes, keyed by the normalized request. Errors and sample data are never stored. (The Cache API is a no-op on `*.workers.dev`; it works on the `opensrc.studio` route.)
 - Repo stars are cached for 1h. Enrichment only runs when a token is set, fetching at most 4 repos at a time.
 - If GitHub returns an error, hits the rate limit or times out, the API serves `src/data/fixtures.json` with `source: "fixtures"` and a `warning`.
   - The file has 32 sample issues on real, popular repos. They are filtered by language where possible and ranked by how well they match.

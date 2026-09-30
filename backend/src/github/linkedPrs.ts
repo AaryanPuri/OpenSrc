@@ -1,3 +1,4 @@
+import { hasLinkedPr, type GqlLinkedPrFields } from "../../../shared/repoIssues.js";
 import { TTLCache } from "../cache.js";
 import type { Issue } from "../types.js";
 
@@ -32,22 +33,12 @@ export const LINKED_PR_QUERY = `query($ids: [ID!]!) {
   }
 }`;
 
-interface GqlIssueNode {
+interface GqlIssueNode extends GqlLinkedPrFields {
   id: string;
-  closedByPullRequestsReferences?: { totalCount: number } | null;
-  timelineItems?: {
-    nodes: ({ __typename: string; source?: { __typename: string; state?: string } | null } | null)[];
-  } | null;
 }
 
-export function hasLinkedPr(node: GqlIssueNode): boolean {
-  if ((node.closedByPullRequestsReferences?.totalCount ?? 0) > 0) return true;
-  return (node.timelineItems?.nodes ?? []).some(
-    (n) =>
-      n?.__typename === "ConnectedEvent" ||
-      (n?.__typename === "CrossReferencedEvent" && n.source?.__typename === "PullRequest" && n.source.state === "OPEN"),
-  );
-}
+// The rule is shared with the repo page's issue list (shared/repoIssues.ts).
+export { hasLinkedPr };
 
 /**
  * Sets `linkedPr` on items whose GitHub node id is known. Needs a token

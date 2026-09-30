@@ -55,7 +55,11 @@ export interface CompactDataset {
   rh: (number | null)[];
   /** fields, comma-separated */
   fl: string[];
-  /** hours from firstSeenAt to generatedAt */
+  /**
+   * hours from firstSeenAt to generatedAt, rounded UP: the expanded time is never later than the
+   * real one, so a repo first seen in the bootstrap run stays at or before meta.bootstrapAt
+   * ("Fresh this week" leaves those out). Rounding to the nearest hour could move it past.
+   */
   fs: number[];
   sc: number[];
 }
@@ -65,9 +69,9 @@ const GITHUB = 'https://github.com/';
 
 const FLAG = { coc: 1, curated: 2, firstPr: 4, archived: 8, fork: 16, mirror: 32 } as const;
 
-const hoursBefore = (iso: string, base: number) => {
+const hoursBefore = (iso: string, base: number, round: (n: number) => number = Math.round) => {
   const t = Date.parse(iso);
-  return Number.isFinite(t) ? Math.max(0, Math.round((base - t) / HOUR)) : -1;
+  return Number.isFinite(t) ? Math.max(0, round((base - t) / HOUR)) : -1;
 };
 const fromHours = (h: number, base: number) => (h < 0 ? '' : new Date(base - h * HOUR).toISOString());
 
@@ -128,7 +132,7 @@ export function compactDataset(repos: RepoRecord[], generatedAt: string): Compac
     ga: col((r) => r.gfiUnanswered),
     rh: col((r) => (r.responseHours === null ? null : roundHours(r.responseHours))),
     fl: col((r) => r.fields.join(',')),
-    fs: col((r) => hoursBefore(r.firstSeenAt, base)),
+    fs: col((r) => hoursBefore(r.firstSeenAt, base, Math.ceil)),
     sc: col((r) => r.score),
   };
 }

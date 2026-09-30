@@ -202,3 +202,9 @@ export function replyTime(hours: number): string {
   if (hours < 36) return `~${Math.round(hours)}h`;
   return `~${Math.round(hours / 24)}d`;
 }
+
+/** "as of the Sep 30 nightly update": the directory's issue counts are a snapshot, not live. */
+export function snapshotNote(now: number): string {
+  const day = new Date(now).toLocaleDateString('en', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+  return `as of the ${day} nightly update`;
+}

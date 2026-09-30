@@ -186,7 +186,6 @@ function EmptyCollection({ c }: { c: Collection }) {
 
 /** Every collection as a quilt block. */
 export function CollectionsPage() {
-  const { repos, meta, partial } = useDataset();
   const site = useSiteUrl();
   useDocumentMeta(useMemo(() => collectionsMeta(site, COLLECTIONS), [site]));
   return (
@@ -202,7 +201,7 @@ export function CollectionsPage() {
         </p>
       </div>
       <div className="mt-8">
-        <CollectionQuilt repos={repos} meta={meta} counts={partial?.collections} title="All collections" detailed />
+        <CollectionQuilt title="All collections" detailed />
       </div>
     </div>
   );

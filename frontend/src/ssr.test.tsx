@@ -72,6 +72,25 @@ describe('server rendering', () => {
     expect(fetch).not.toHaveBeenCalled();
   });
 
+  it('shows the First-PR ribbon only when the list is not already first-PR only', () => {
+    const friendly = repos.filter((r) => r.firstPrFriendly).length;
+    expect(friendly).toBeGreaterThan(0);
+    expect(render('/').match(/data-testid="first-pr-ribbon"/g)).toHaveLength(friendly);
+    const firstOnly = render('/?first=1');
+    expect(firstOnly.match(/data-testid="repo-card"/g)).toHaveLength(friendly);
+    expect(firstOnly).not.toContain('data-testid="first-pr-ribbon"');
+    expect(render('/collections/first-pr')).not.toContain('data-testid="first-pr-ribbon"');
+  });
+
+  it('shows collection blocks without repo counts', () => {
+    for (const path of ['/', '/collections']) {
+      const html = render(path);
+      expect(html.match(/data-testid="collection-block"/g)).toHaveLength(5);
+      expect(html.match(/data-testid="collection-blurb"/g)).toHaveLength(5);
+      expect(text(html)).not.toMatch(/\d+ repos\b|None yet/);
+    }
+  });
+
   it('filters the directory with ?q=; beginner wording turns first-PR mode on', () => {
     const html = render('/?q=beginner%20rust%20repos');
     expect(html).toContain('beginner rust repos</textarea>');

@@ -131,11 +131,6 @@ export function siteRoutes(site: Site, repoLimit = Infinity): SiteRoute[] {
   ];
 }
 
-const collectionCounts = (site: Site) => {
-  const ctx = collectionContext(site.meta);
-  return Object.fromEntries(COLLECTIONS.map((c) => [c.id, site.repos.filter((r) => c.includes(r, ctx)).length]));
-};
-
 /** What one route's page carries inline. */
 export function pageDataFor(site: Site, route: SiteRoute, opts: { siteUrl: string; indexUrl: string }): PageData {
   const base = { v: 1 as const, site: opts.siteUrl, index: opts.indexUrl, meta: site.meta, path: route.path };
@@ -153,7 +148,7 @@ export function pageDataFor(site: Site, route: SiteRoute, opts: { siteUrl: strin
       return {
         ...base,
         slice: slice(list.slice(0, LIST_PAGE)),
-        view: { total: list.length, collections: collectionCounts(site) },
+        view: { total: list.length },
       };
     }
     case 'language':
@@ -162,7 +157,7 @@ export function pageDataFor(site: Site, route: SiteRoute, opts: { siteUrl: strin
       return { ...base, slice: slice(list.slice(0, LIST_PAGE)), view: { total: list.length, stats: listStats(list) } };
     }
     case 'collections':
-      return { ...base, slice: slice([]), view: { collections: collectionCounts(site) } };
+      return { ...base, slice: slice([]) };
     case 'collection': {
       const c = collectionById(route.id)!;
       const list = selectCollection(c, site.repos, collectionContext(site.meta));

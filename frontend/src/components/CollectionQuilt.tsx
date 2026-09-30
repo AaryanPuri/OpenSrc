@@ -2,9 +2,8 @@ import { motion } from 'framer-motion';
 import { useEntrance } from '../hooks/useEntrance';
 import { Link } from 'react-router';
 import { COLLECTIONS, type Collection } from '../../../shared/collections';
-import type { DatasetMeta, RepoRecord } from '../../../shared/repo';
 import { fabricStyle } from '../lib/fabric';
-import { COLLECTION_LOOK, useCollectionCounts } from '../lib/repoDisplay';
+import { COLLECTION_LOOK } from '../lib/repoDisplay';
 
 export function CollectionBlockArt({ c, className = '' }: { c: Collection; className?: string }) {
   const look = COLLECTION_LOOK[c.id];
@@ -26,31 +25,25 @@ export function CollectionBlockArt({ c, className = '' }: { c: Collection; class
 }
 
 interface Props {
-  repos: RepoRecord[];
-  meta: DatasetMeta | null;
-  /** Repos per collection, when known without the whole directory (a pre-rendered page). */
-  counts?: Record<string, number>;
   title?: string;
   sub?: string;
   /** Id of the section title. */
   headingId?: string;
-  /** The collections page: no section title (the page has one), descriptions on the blocks. */
+  /** The collections page: no section title (the page has one), the full description on the blocks. */
   detailed?: boolean;
 }
 
-/** The five collections as big quilt blocks, each linking to its page. */
+/**
+ * The five collections as big quilt blocks, each linking to its page: a title and a short
+ * blurb, no repo counts (a collection's own page says how many it holds, in its grid heading).
+ */
 export function CollectionQuilt({
-  repos,
-  meta,
-  counts: known,
   title = 'Collections',
   sub = 'Hand-cut views of the directory.',
   headingId = 'collections-title',
   detailed = false,
 }: Props) {
   const enter = useEntrance();
-  const computed = useCollectionCounts(repos, meta);
-  const counts = known ?? computed;
   return (
     <section className="mx-auto max-w-6xl px-4 sm:px-6" aria-labelledby={headingId}>
       <div
@@ -67,43 +60,39 @@ export function CollectionQuilt({
         className="mt-5 grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-5"
         data-testid="collection-quilt"
       >
-        {COLLECTIONS.map((c, i) => {
-          const n = counts?.[c.id];
-          return (
-            <motion.li
-              key={c.id}
-              className={i === 0 ? 'col-span-2 sm:col-span-1' : ''}
-              initial={enter({ y: 18, rotate: i % 2 ? 1 : -1 })}
-              whileInView={{ y: 0, rotate: 0 }}
-              viewport={{ once: true, margin: '-40px' }}
-              transition={{ type: 'spring', stiffness: 260, damping: 22, delay: i * 0.05 }}
+        {COLLECTIONS.map((c, i) => (
+          <motion.li
+            key={c.id}
+            className={i === 0 ? 'col-span-2 sm:col-span-1' : ''}
+            initial={enter({ y: 18, rotate: i % 2 ? 1 : -1 })}
+            whileInView={{ y: 0, rotate: 0 }}
+            viewport={{ once: true, margin: '-40px' }}
+            transition={{ type: 'spring', stiffness: 260, damping: 22, delay: i * 0.05 }}
+          >
+            <motion.div
+              className="h-full"
+              whileHover={{ y: -3, rotate: i % 2 ? 0.6 : -0.6 }}
+              whileTap={{ scale: 0.97 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 22 }}
             >
-              <motion.div
-                className="h-full"
-                whileHover={{ y: -3, rotate: i % 2 ? 0.6 : -0.6 }}
-                whileTap={{ scale: 0.97 }}
-                transition={{ type: 'spring', stiffness: 400, damping: 22 }}
+              <Link
+                to={`/collections/${c.id}`}
+                className="group flex h-full flex-col overflow-hidden rounded-[16px] border border-line bg-surface/60 transition-[background-color,border-color,box-shadow] duration-200 hover:border-line-strong hover:bg-surface hover:shadow-lift"
+                data-testid="collection-block"
               >
-                <Link
-                  to={`/collections/${c.id}`}
-                  className="group flex h-full flex-col overflow-hidden rounded-[16px] border border-line bg-surface/60 transition-[background-color,border-color,box-shadow] duration-200 hover:border-line-strong hover:bg-surface hover:shadow-lift"
-                  data-testid="collection-block"
-                >
-                  <CollectionBlockArt c={c} className="h-20 w-full sm:h-24" />
-                  <span className="flex flex-1 flex-col gap-0.5 p-3">
-                    <span className="font-display text-[16px] font-[560] leading-tight tracking-[-0.01em] text-fg">
-                      {c.title}
-                    </span>
-                    {detailed && <span className="mt-1 text-[12.5px] leading-snug text-muted">{c.description}</span>}
-                    <span className={`text-xs tabular-nums text-subtle ${detailed ? 'mt-auto pt-2' : ''}`}>
-                      {n === undefined ? ' ' : n === 0 ? 'None yet' : `${n.toLocaleString('en')} repos`}
-                    </span>
+                <CollectionBlockArt c={c} className="h-20 w-full sm:h-24" />
+                <span className="flex flex-1 flex-col gap-1 p-3">
+                  <span className="font-display text-[16px] font-[560] leading-tight tracking-[-0.01em] text-fg">
+                    {c.title}
                   </span>
-                </Link>
-              </motion.div>
-            </motion.li>
-          );
-        })}
+                  <span className="text-[12.5px] leading-snug text-muted" data-testid="collection-blurb">
+                    {detailed ? c.description : c.blurb}
+                  </span>
+                </span>
+              </Link>
+            </motion.div>
+          </motion.li>
+        ))}
       </ul>
     </section>
   );

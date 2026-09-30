@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { Bookmark, CircleCheck, Clock, GitPullRequestArrow, MessageSquare, Star } from 'lucide-react';
+import { Bookmark, CircleCheck, Clock, GitPullRequestArrow, MessageSquare, Star, UserRound } from 'lucide-react';
 import { memo, useRef } from 'react';
 import type { Theme } from '../hooks/useTheme';
 import { LANGUAGES } from '../lib/dictionary';
@@ -218,8 +218,18 @@ export const IssueCard = memo(function IssueCard({
         </div>
 
         {/* 4. Availability + at most three labels */}
-        {(issue.labels.length > 0 || issue.linkedPr !== undefined) && (
+        {(issue.labels.length > 0 || issue.linkedPr !== undefined || issue.assigned) && (
           <ul className="mt-3 flex flex-wrap gap-1.5" aria-label="Status and labels">
+            {issue.assigned && (
+              <li
+                className="inline-flex h-[22px] items-center gap-1 rounded-full bg-fg/[0.08] px-2 text-[12px] font-semibold text-muted"
+                title="Someone is assigned to this issue: ask before starting on it"
+                data-testid="assigned"
+              >
+                <UserRound className="h-3.5 w-3.5" aria-hidden="true" />
+                Assigned
+              </li>
+            )}
             <LinkedPr linked={issue.linkedPr} />
             {issue.labels.slice(0, 3).map((l) => (
               <li

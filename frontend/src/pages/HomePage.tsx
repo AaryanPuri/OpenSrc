@@ -45,13 +45,8 @@ export function HomePage() {
   useEffect(() => setInput(text), [text, homeTick]);
 
   // `first` and `sort` are what the grid shows: beginner wording turns first-PR mode on, and its default sort.
-  const { status, results, parsed, meta, now, retry, repos, partial, first, sort } = useRepoResults(
-    text,
-    url.sort,
-    url.first,
-  );
+  const { status, results, parsed, meta, now, retry, partial, first, sort } = useRepoResults(text, url.sort, url.first);
   const chips = useMemo(() => repoChips(parsed), [parsed]);
-  const directorySize = meta?.count ?? repos.length;
   // A pre-rendered home page holds the first page of results; the count is the whole list's.
   const total = partial?.total ?? results.length;
 
@@ -215,12 +210,7 @@ export function HomePage() {
             )
           }
         />
-        <CollectionQuilt
-          repos={repos}
-          meta={meta}
-          counts={partial?.collections}
-          sub="Hand-cut views of the directory, for where you are right now."
-        />
+        <CollectionQuilt sub="Hand-cut views of the directory, for where you are right now." />
         <div className="mx-auto mt-12 max-w-6xl px-4 sm:px-6">
           <div id="directory" className="seam-t scroll-mt-20 pt-8">
             <h2 className="sr-only">The directory</h2>
@@ -234,7 +224,7 @@ export function HomePage() {
           <DomainQuilt
             hrefFor={(id) => `/field/${id}`}
             title="Browse by field"
-            sub={`The same ${directorySize ? directorySize.toLocaleString('en') : ''} repos, by what they are about.`}
+            sub="The same repos, by what they are about."
           />
         </div>
         <div className="mx-auto mt-16 max-w-6xl px-4 sm:px-6">

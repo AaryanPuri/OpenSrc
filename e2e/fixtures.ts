@@ -4,6 +4,8 @@
  *
  * - `/api/search?gq=…` answers three made-up issues in the `repo:` it asks for, and
  *   none when the query asks for `label:documentation` (a repo without that label).
+ * - `/api/repo-issues?repo=…&tab=…` answers three made-up issues in that repo (the second
+ *   one assigned) with exact per-tab counts (REPO_ISSUE_COUNTS).
  * - `https://api.github.com/*` answers from `github` (per test), else 404.
  * - Avatars are a 1×1 PNG; any other outside request is aborted.
  */
@@ -45,6 +47,37 @@ export function searchResponse(gq: string) {
   return { parsed: null, githubQuery: gq, total: items.length, items, source: 'github' };
 }
 
+/** The per-tab counts the mocked /api/repo-issues reports. */
+export const REPO_ISSUE_COUNTS = { all: 128, gfi: 7, help: 12 };
+
+/** What /api/repo-issues returns for a repo and tab, like the real API does. */
+export function repoIssuesResponse(repo: string, tab: string) {
+  const [owner] = repo.split('/');
+  const items = ISSUE_TITLES.map((title, i) => ({
+    id: 7000 + i,
+    number: 200 + i,
+    title: tab === 'all' ? title : `${title} (${tab})`,
+    url: `https://github.com/${repo}/issues/${200 + i}`,
+    repo: { fullName: repo, owner, avatarUrl: '', url: `https://github.com/${repo}` },
+    labels: [{ name: tab === 'help' ? 'help wanted' : 'good first issue', color: '7057ff' }],
+    comments: i,
+    createdAt: '2026-09-20T10:00:00Z',
+    updatedAt: '2026-09-27T10:00:00Z',
+    bodyExcerpt: 'A small, well-scoped change with pointers in the description.',
+    author: 'octo',
+    assigned: i === 1,
+  }));
+  return {
+    items,
+    hasMore: false,
+    next: null,
+    counts: REPO_ISSUE_COUNTS,
+    labels: { gfi: ['good first issue'], help: ['help wanted'] },
+    source: 'github',
+    via: 'graphql',
+  };
+}
+
 type GithubHandler = (url: URL) => { status?: number; json: unknown } | undefined;
 
 export interface Mocks {
@@ -52,6 +85,8 @@ export interface Mocks {
   github: GithubHandler[];
   /** Every /api/search query the page made. */
   searches: string[];
+  /** Every /api/repo-issues query string the page made. */
+  repoIssues: URLSearchParams[];
 }
 
 export async function mockNetwork(page: Page, mocks: Mocks): Promise<void> {
@@ -77,12 +112,17 @@ export async function mockNetwork(page: Page, mocks: Mocks): Promise<void> {
     mocks.searches.push(gq);
     return route.fulfill({ json: searchResponse(gq) });
   });
+  await page.route('**/api/repo-issues?*', (route) => {
+    const params = new URL(route.request().url()).searchParams;
+    mocks.repoIssues.push(params);
+    return route.fulfill({ json: repoIssuesResponse(params.get('repo') ?? '', params.get('tab') ?? 'gfi') });
+  });
 }
 
 export const test = base.extend<{ mocks: Mocks }>({
   mocks: [
     async ({ page }, use) => {
-      const mocks: Mocks = { github: [], searches: [] };
+      const mocks: Mocks = { github: [], searches: [], repoIssues: [] };
       await mockNetwork(page, mocks);
       await use(mocks);
     },
