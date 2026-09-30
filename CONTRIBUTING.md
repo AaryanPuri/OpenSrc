@@ -32,6 +32,8 @@ npm run lint     # ESLint
 npm run typecheck
 npm test
 npm run build
+npm run e2e:install   # once: Playwright's Chromium
+npm run e2e           # end-to-end tests against the build, with a small fixture dataset
 ```
 
 - Keep PRs focused: one change per PR.

@@ -20,6 +20,8 @@ export function LanguageChip({ id, count }: { id: string; count?: number }) {
     <Link to={`/language/${id}`} className="chip touch h-9 gap-2 px-3 text-[13px]" data-testid="language-link">
       <LanguageDot id={id} />
       {languageDef(id)?.label ?? id}
+      {/* "Go" alone reads as a generic link to crawlers and screen readers. */}
+      <span className="sr-only"> repos</span>
       {count !== undefined && <span className="tabular-nums text-subtle">{count.toLocaleString('en')}</span>}
     </Link>
   );
@@ -100,6 +102,7 @@ export function FooterBrowse({ meta }: { meta: DatasetMeta | null }) {
                   <Link to={`/language/${id}`} className={`${link} gap-1.5`}>
                     <LanguageDot id={id} className="h-2 w-2" />
                     {languageDef(id)?.label ?? id}
+                    <span className="sr-only"> repos</span>
                   </Link>
                 </li>
               ))}

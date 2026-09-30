@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { RepoRecord } from './repo';
-import { scoreGates, scoreRepo, type ScoreInput } from './score';
+import { claimableGfi, scoreGates, scoreRepo, type ScoreInput } from './score';
 
 const NOW = Date.parse('2026-09-01T00:00:00Z');
 const daysAgo = (d: number) => new Date(NOW - d * 86_400_000).toISOString();
@@ -29,15 +29,16 @@ function input(over: Partial<RepoRecord> = {}): ScoreInput {
 describe('scoreRepo: golden cases', () => {
   it('a typical healthy repo', () => {
     const r = scoreRepo(input(), NOW);
+    // 8 claimable good first issues + 1 for help wanted: ln 10 / ln 51 = .59 → 17.6
     expect(r.parts).toEqual({
-      supply: 18.1,
-      activity: 16.4,
-      response: 11.9,
-      onboarding: 11.3,
+      supply: 17.6,
+      activity: 12.3,
+      response: 15.9,
+      onboarding: 7.5,
       claimable: 12,
       reach: 4.3,
     });
-    expect(r.score).toBe(74);
+    expect(r.score).toBe(70);
     expect(r.eligible).toBe(true);
     expect(r.firstPrFriendly).toBe(true);
   });
@@ -45,7 +46,7 @@ describe('scoreRepo: golden cases', () => {
   it('a perfect repo scores 100', () => {
     const r = scoreRepo(
       input({
-        goodFirstIssues: 30,
+        goodFirstIssues: 50,
         helpWanted: 0,
         lastCommitAt: daysAgo(0),
         responseHours: 12,
@@ -56,7 +57,7 @@ describe('scoreRepo: golden cases', () => {
       }),
       NOW,
     );
-    expect(r.parts).toEqual({ supply: 25, activity: 20, response: 15, onboarding: 15, claimable: 15, reach: 10 });
+    expect(r.parts).toEqual({ supply: 30, activity: 15, response: 20, onboarding: 10, claimable: 15, reach: 10 });
     expect(r.score).toBe(100);
   });
 
@@ -75,30 +76,51 @@ describe('scoreRepo: golden cases', () => {
       }),
       NOW,
     );
-    // supply ln3/ln31 = .32 → 8; activity e^-2 = .135 → 2.7; unknown response is neutral → 7.5
-    expect(r.parts).toEqual({ supply: 8, activity: 2.7, response: 7.5, onboarding: 0, claimable: 7.5, reach: 0 });
-    expect(r.score).toBe(26);
+    // 1 claimable: supply ln2/ln51 = .18 → 5.3; activity e^-2 = .135 → 2; unknown response .4 → 8
+    expect(r.parts).toEqual({ supply: 5.3, activity: 2, response: 8, onboarding: 0, claimable: 7.5, reach: 0 });
+    expect(r.score).toBe(23);
     expect(r.eligible).toBe(true);
     expect(r.firstPrFriendly).toBe(false);
   });
 
+  const strong = (over: Partial<RepoRecord> = {}) =>
+    input({ goodFirstIssues: 30, gfiSampled: 20, gfiUnassigned: 20, hasCodeOfConduct: true, stars: 20_000, ...over });
+
   it('slow responders are not first-PR friendly even with a high score', () => {
-    const r = scoreRepo(input({ responseHours: 100 }), NOW);
-    expect(r.score).toBeGreaterThanOrEqual(60);
+    const r = scoreRepo(strong({ responseHours: 100 }), NOW);
+    expect(r.score).toBeGreaterThanOrEqual(70);
     expect(r.firstPrFriendly).toBe(false);
-    expect(scoreRepo(input({ responseHours: null }), NOW).firstPrFriendly).toBe(true);
+    expect(scoreRepo(strong({ responseHours: null }), NOW).firstPrFriendly).toBe(true);
   });
 
-  it('first-PR friendly needs 3 good first issues and a CONTRIBUTING file', () => {
-    expect(scoreRepo(input({ contributingUrl: null }), NOW).firstPrFriendly).toBe(false);
-    const few = input({ goodFirstIssues: 2, helpWanted: 40, hasCodeOfConduct: true, stars: 50_000 });
+  it('first-PR friendly needs a score of 70, 3 claimable good first issues and a CONTRIBUTING file', () => {
+    expect(scoreRepo(strong(), NOW).firstPrFriendly).toBe(true);
+    expect(scoreRepo(strong({ contributingUrl: null }), NOW).firstPrFriendly).toBe(false);
+    const few = strong({ goodFirstIssues: 2, gfiSampled: 2, gfiUnassigned: 2, helpWanted: 40 });
     expect(scoreRepo(few, NOW).score).toBeGreaterThanOrEqual(60);
     expect(scoreRepo(few, NOW).firstPrFriendly).toBe(false);
+    // Plenty of good first issues, but nearly all of them already assigned.
+    const claimed = strong({ goodFirstIssues: 20, gfiSampled: 20, gfiUnassigned: 2 });
+    expect(claimableGfi(claimed)).toBe(2);
+    expect(scoreRepo(claimed, NOW).firstPrFriendly).toBe(false);
+    // Just under the bar.
+    const r = scoreRepo(input({ lastCommitAt: daysAgo(12) }), NOW);
+    expect(r.score).toBe(69);
+    expect(r.firstPrFriendly).toBe(false);
+  });
+
+  it('supply counts claimable good first issues, not the whole backlog', () => {
+    expect(claimableGfi({ goodFirstIssues: 40, gfiSampled: 20, gfiUnassigned: 5 })).toBe(10);
+    expect(claimableGfi({ goodFirstIssues: 5, gfiSampled: 0, gfiUnassigned: 0 })).toBe(0);
+    const open = scoreRepo(input({ goodFirstIssues: 40, gfiSampled: 20, gfiUnassigned: 20 }), NOW).parts.supply;
+    const taken = scoreRepo(input({ goodFirstIssues: 40, gfiSampled: 20, gfiUnassigned: 5 }), NOW).parts.supply;
+    expect(open).toBeGreaterThan(taken);
   });
 
   it('response time decays on a log scale to zero at 30 days', () => {
-    expect(scoreRepo(input({ responseHours: 24 }), NOW).parts.response).toBe(15);
-    expect(scoreRepo(input({ responseHours: 72 }), NOW).parts.response).toBe(10.2);
+    expect(scoreRepo(input({ responseHours: 24 }), NOW).parts.response).toBe(20);
+    expect(scoreRepo(input({ responseHours: 72 }), NOW).parts.response).toBe(13.5);
+    expect(scoreRepo(input({ responseHours: null }), NOW).parts.response).toBe(8);
     expect(scoreRepo(input({ responseHours: 720 }), NOW).parts.response).toBe(0);
     expect(scoreRepo(input({ responseHours: 5000 }), NOW).parts.response).toBe(0);
   });

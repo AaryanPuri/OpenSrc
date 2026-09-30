@@ -17,6 +17,7 @@ import {
   detailAlias,
   responseAlias,
   gfiSampleCounts,
+  issueLabelsUsed,
   medianResponseHours,
   normaliseLicense,
   SEARCH_PAGE_SIZE,
@@ -68,7 +69,16 @@ export interface CollectResult {
   candidates: number;
   /** Requested repos that couldn't be fetched (renamed, deleted, errors). */
   missing: string[];
+  /**
+   * Repos the search found through a recent push (to any branch) whose default
+   * branch has no commit within MAX_IDLE_DAYS. The score's stale gate would drop
+   * them, so they are left out here and spare candidates take their place.
+   */
+  staleBranch: string[];
 }
+
+/** Extra candidates detailed per run, to fill the places of repos the stale gate turns away. */
+export const STALE_MARGIN = 0.03;
 
 const DAY_MS = 86_400_000;
 
@@ -109,7 +119,10 @@ export async function collect(opts: CollectOptions): Promise<CollectResult> {
       .filter(({ node }) => passesPrefilter(node, now) && !isExcluded(opts.curation, node.nameWithOwner))
       .map(({ node, language }) => ({ fullName: node.nameWithOwner, language, prescore: prescore(node, now) }));
     candidates = pool.length;
-    names = selectCandidates(pool, opts.limit ?? MAX_REPOS, opts.minPerLanguage ?? 10).map((c) => c.fullName);
+    const limit = opts.limit ?? MAX_REPOS;
+    names = selectCandidates(pool, limit + Math.ceil(limit * STALE_MARGIN), opts.minPerLanguage ?? 10).map(
+      (c) => c.fullName,
+    );
     const chosen = new Set(names.map((n) => n.toLowerCase()));
     for (const inc of opts.curation.include) {
       if (!chosen.has(inc.repo.toLowerCase()) && !isExcluded(opts.curation, inc.repo)) names.push(inc.repo);
@@ -134,11 +147,19 @@ export async function collect(opts: CollectOptions): Promise<CollectResult> {
     }
     return { out, missing };
   });
+  // Search matches `pushed:` (any branch); the gate reads the default branch's last commit.
+  const detailed = results.flatMap((r) => r.out);
+  const stale = (r: RepoRecord) => now - Date.parse(r.lastCommitAt) > MAX_IDLE_DAYS * DAY_MS;
+  const staleBranch = detailed.filter(stale).map((r) => r.fullName);
+  if (staleBranch.length) {
+    log(`${staleBranch.length} pushed recently but with no default-branch commit in ${MAX_IDLE_DAYS} days: left out`);
+  }
   return {
-    records: results.flatMap((r) => r.out),
+    records: detailed.filter((r) => !stale(r)),
     searched,
     candidates,
     missing: results.flatMap((r) => r.missing),
+    staleBranch,
   };
 }
 
@@ -329,9 +350,15 @@ export function toRecord(node: DetailNode, now: Date, responseIssues: (ResponseI
     gfiSampled: sample.sampled,
     gfiUnassigned: sample.unassigned,
     gfiUnanswered: sample.unanswered,
+    issueLabels: issueLabelsUsed(node),
     responseHours: responseIssues ? medianResponseHours(responseIssues, now.getTime()) : null,
     responseSampledAt: responseIssues ? nowIso : null,
-    fields: classifyRepo({ name: node.name, description: node.description, topics }),
+    fields: classifyRepo({
+      name: node.name,
+      description: node.description,
+      topics,
+      language: (languageName && resolveLanguage(languageName)) || null,
+    }),
     curated: false,
     firstSeenAt: nowIso,
     score: 0,

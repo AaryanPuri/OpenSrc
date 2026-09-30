@@ -33,6 +33,7 @@ function repo(fullName: string, over: Partial<RepoRecord> = {}): RepoRecord {
     gfiSampled: 0,
     gfiUnassigned: 0,
     gfiUnanswered: 0,
+    issueLabels: [],
     responseHours: null,
     responseSampledAt: null,
     fields: [],

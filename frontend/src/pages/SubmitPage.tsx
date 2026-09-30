@@ -22,7 +22,16 @@ import {
   type FlagReason,
 } from '../../../shared/issueForms';
 import type { RepoRecord } from '../../../shared/repo';
-import { daysSince, GATE_LABELS, MAX_IDLE_DAYS, MIN_OPEN_ISSUES, MIN_STARS, type Gate } from '../../../shared/score';
+import {
+  daysSince,
+  FIRST_PR_MIN_GFI,
+  FIRST_PR_MIN_SCORE,
+  GATE_LABELS,
+  MAX_IDLE_DAYS,
+  MIN_OPEN_ISSUES,
+  MIN_STARS,
+  type Gate,
+} from '../../../shared/score';
 import { GitHubMark, NeedleIcon, RepoAvatar } from '../components/icons';
 import { FirstPrRibbon, RepoCard } from '../components/RepoCard';
 import { ScoreStitches } from '../components/ScoreStitches';
@@ -727,8 +736,8 @@ function HowListingWorks() {
             Every listed repo gets a contributor-friendliness score from 0 to 100 for its open good first issues, recent
             commits, how fast maintainers reply, a CONTRIBUTING guide and code of conduct, how many beginner issues are
             still unclaimed, and a little for stars. It is{' '}
-            <span className="font-medium text-fg">First-PR friendly</span> at 60 or more, with at least 3 good first
-            issues, a CONTRIBUTING guide and replies within 3 days.
+            <span className="font-medium text-fg">First-PR friendly</span> at {FIRST_PR_MIN_SCORE} or more, with at
+            least {FIRST_PR_MIN_GFI} unclaimed good first issues, a CONTRIBUTING guide and replies within 3 days.
           </p>
           <p className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[13.5px]">
             <a href={SCORING_URL} target="_blank" rel="noreferrer" className={`inline-flex items-center gap-1 ${LINK}`}>

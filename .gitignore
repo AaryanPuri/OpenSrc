@@ -11,3 +11,9 @@ coverage
 .data/
 .wrangler/
 .dev.vars
+
+# Playwright (npm run e2e): the fixture site, its throwaway database, reports and traces
+e2e/.site/
+e2e/.data/
+playwright-report/
+test-results/

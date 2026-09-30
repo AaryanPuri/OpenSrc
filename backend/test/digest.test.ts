@@ -41,6 +41,7 @@ function repo(fullName: string, over: Partial<RepoRecord> = {}): RepoRecord {
     gfiSampled: 5,
     gfiUnassigned: 5,
     gfiUnanswered: 1,
+    issueLabels: [],
     responseHours: 10,
     responseSampledAt: null,
     fields: [],

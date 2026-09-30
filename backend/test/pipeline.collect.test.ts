@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { RepoRecord } from "../../shared/repo.js";
-import { runCollect, runValidate, parseArgs } from "../src/pipeline/cli.js";
+import { runCollect, runRescore, runValidate, parseArgs } from "../src/pipeline/cli.js";
 import { collect, searchPages, selectCandidates } from "../src/pipeline/collect.js";
 import { emptyCuration, parseCuration } from "../src/pipeline/curation.js";
 import { GraphQLClient } from "../src/pipeline/graphql.js";
@@ -112,11 +112,14 @@ describe("runCollect", () => {
     searchNode("acme/unlicensed", { licenseInfo: null }),
     searchNode("acme/spam"),
     searchNode("acme/gone"),
+    // Pushed to a branch recently, but the default branch is stale.
+    searchNode("acme/branchy"),
   ];
   const details = {
     "acme/tool": detailNode("acme/tool"),
     "acme/spam": detailNode("acme/spam"),
     "friends/tiny": detailNode("friends/tiny", { stargazerCount: 3 }),
+    "acme/branchy": detailNode("acme/branchy", { defaultBranchRef: { target: { committedDate: daysAgo(200) } } }),
   };
 
   it("collects, applies curation, writes a valid dataset", async () => {
@@ -125,9 +128,10 @@ describe("runCollect", () => {
       "include:\n  - friends/tiny\nexclude:\n  - repo: acme/spam\n    reason: spam\nfields:\n  acme/tool: [devtools]\n",
     );
     const gh = fakeGithub({ search, details, responseHours: 5, cost: 2 });
+    const logs: string[] = [];
     const summary = await runCollect(
       { dryRun: false, dataDir: dir, languages: undefined },
-      { token: "t", fetchImpl: gh.fetch, now: NOW, log: quiet, sleep: noSleep },
+      { token: "t", fetchImpl: gh.fetch, now: NOW, log: (m) => logs.push(m), sleep: noSleep },
     );
     const repos = JSON.parse(await readFile(join(dir, "repos.json"), "utf8")) as RepoRecord[];
     const meta = JSON.parse(await readFile(join(dir, "meta.json"), "utf8"));
@@ -138,6 +142,11 @@ describe("runCollect", () => {
     expect(tool.responseHours).toBe(5);
     expect(tool.gfiUnassigned).toBe(5);
     expect(tool.gfiUnanswered).toBe(2);
+    // The spellings its sampled issues use, most used first; "bug" isn't one.
+    expect(tool.issueLabels).toEqual(["good first issue", "E-easy", "help wanted"]);
+    // Search matched it by push, but the gate reads the default branch: left out, not "dropped".
+    expect(logs.some((l) => l.startsWith("1 pushed recently but with no default-branch commit"))).toBe(true);
+    expect(logs.some((l) => l.includes("dropped acme/branchy"))).toBe(false);
     expect(tool.contributingUrl).toBe("https://github.com/acme/tool/blob/HEAD/CONTRIBUTING.md");
     expect(repos[1].curated).toBe(true); // 3 stars, but curated
     expect(meta.bootstrapAt).toBe(NOW.toISOString());
@@ -146,6 +155,11 @@ describe("runCollect", () => {
     expect(await runValidate(dir)).toEqual([]);
     // One repo per line.
     expect((await readFile(join(dir, "repos.json"), "utf8")).split("\n")).toHaveLength(5);
+    // An offline rescore of a valid dataset leaves it valid (and, with unchanged rules, unchanged).
+    const before = await readFile(join(dir, "repos.json"), "utf8");
+    await runRescore(dir, quiet);
+    expect(await readFile(join(dir, "repos.json"), "utf8")).toBe(before);
+    expect(await runValidate(dir)).toEqual([]);
   });
 
   it("dry-run writes nothing", async () => {

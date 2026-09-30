@@ -15,7 +15,7 @@ import { useRepoUrlState } from '../hooks/useRepoUrlState';
 import { useShell } from '../hooks/useShell';
 import { LIST_PAGE } from '../lib/listPages';
 import { setDifficulty, toggleDomain, toggleLanguage, type Chip, type ParsedQuery } from '../lib/parseQuery';
-import { REPO_SORT_LABELS, removeRepoChip, repoChips, useRepoResults } from '../lib/repoSearch';
+import { REPO_SORT_LABELS, removeRepoChip, repoChips, repoSearchParams, useRepoResults } from '../lib/repoSearch';
 import { useSiteUrl } from '../seo/context';
 import { homeMeta, searchMeta } from '../seo/meta';
 
@@ -88,7 +88,8 @@ export function HomePage() {
     />
   );
 
-  const search = url.q ? `?q=${encodeURIComponent(url.q)}` : '';
+  // Carried to repo pages, so "Back to your search" restores the query, the sort and the first-PR filter.
+  const search = url.q ? `?${repoSearchParams(url.q, url.sort, url.first)}` : '';
   const body = (
     <div className="grid gap-6 lg:grid-cols-[216px_minmax(0,1fr)] lg:gap-10">
       {filters}

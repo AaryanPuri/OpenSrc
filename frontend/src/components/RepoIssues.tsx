@@ -30,8 +30,24 @@ export default function RepoIssues({ repo }: { repo: RepoRecord }) {
   const parsed = useMemo(() => (q ? parseQuery(q) : null), [q]);
   const extraChips = useMemo(() => (parsed ? issueLevelChips(parsed) : []), [parsed]);
   const narrowing = extraChips.length ? parsed : null;
-  const ghQuery = repoIssueQuery(repo.fullName, tab, narrowing);
+  const narrowedQuery = repoIssueQuery(repo, tab, narrowing);
+  // When the search's issue-level filter ("docs") finds nothing here, usually because
+  // the repo doesn't use that label, the tab falls back to its unnarrowed list.
+  const [fallbackFor, setFallbackFor] = useState<string | null>(null);
+  const fellBack = !!narrowing && fallbackFor === narrowedQuery;
+  const ghQuery = fellBack ? repoIssueQuery(repo, tab) : narrowedQuery;
   const search = useSearch(ghQuery, 'best', token, demo);
+  useEffect(() => {
+    if (
+      narrowing &&
+      !fellBack &&
+      search.query === narrowedQuery &&
+      search.status === 'success' &&
+      search.items.length === 0
+    ) {
+      setFallbackFor(narrowedQuery);
+    }
+  }, [narrowing, fellBack, narrowedQuery, search.query, search.status, search.items.length]);
   const [noticeDismissed, setNoticeDismissed] = useState(false);
   useEffect(() => setNoticeDismissed(false), [ghQuery]);
   const gh = `https://github.com/${repo.fullName}`;
@@ -87,7 +103,7 @@ export default function RepoIssues({ repo }: { repo: RepoRecord }) {
 
       {extraChips.length > 0 && (
         <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-muted" data-testid="issue-narrowing">
-          <span>Narrowed by your search:</span>
+          <span>{fellBack ? 'Your search asked for:' : 'Narrowed by your search:'}</span>
           <ul className="flex flex-wrap gap-2">
             <AnimatePresence initial={false}>
               {extraChips.map((c, i) => (
@@ -103,6 +119,13 @@ export default function RepoIssues({ repo }: { repo: RepoRecord }) {
             <X className="h-3.5 w-3.5" aria-hidden="true" /> Show all
           </button>
         </div>
+      )}
+
+      {fellBack && (
+        <p className="mt-2 text-sm text-muted" role="status" data-testid="issue-fallback">
+          No {extraChips.map((c) => `'${c.label.toLowerCase()}'`).join(' or ')}-labelled issues here, showing all{' '}
+          {TAB_LABEL[tab].toLowerCase()}.
+        </p>
       )}
 
       {!noticeDismissed && search.notice && (

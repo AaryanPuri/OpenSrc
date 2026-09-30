@@ -2,7 +2,16 @@ import { describe, expect, it } from 'vitest';
 import type { RepoRecord } from '../../../shared/repo';
 import { REPO_EXAMPLE_QUERIES } from './examples';
 import { parseQuery } from './parseQuery';
-import { filterRepos, readRepoQuery, removeRepoChip, repoChips, repoIssueQuery, type RepoSort } from './repoSearch';
+import { GOOD_FIRST_LABELS } from '../../../shared/labels';
+import {
+  backToSearchPath,
+  filterRepos,
+  readRepoQuery,
+  removeRepoChip,
+  repoChips,
+  repoIssueQuery,
+  type RepoSort,
+} from './repoSearch';
 
 const NOW = Date.parse('2026-09-01T00:00:00Z');
 const daysAgo = (d: number) => new Date(NOW - d * 86_400_000).toISOString();
@@ -34,6 +43,7 @@ function repo(fullName: string, over: Partial<RepoRecord> = {}): RepoRecord {
     gfiSampled: 3,
     gfiUnassigned: 3,
     gfiUnanswered: 0,
+    issueLabels: [],
     responseHours: null,
     responseSampledAt: null,
     fields: [],
@@ -129,18 +139,47 @@ describe('repo-mode patches', () => {
 });
 
 describe('repo issue query', () => {
-  it('searches good first issue labels in one repo', () => {
-    const q = repoIssueQuery('rust-lang/rust', 'gfi');
+  const unknown = (fullName: string) => ({ fullName, issueLabels: [] });
+
+  it("searches the common good first issue labels when the repo's own are unknown", () => {
+    const q = repoIssueQuery(unknown('rust-lang/rust'), 'gfi');
     expect(q).toMatch(/^repo:rust-lang\/rust is:issue is:open no:assignee archived:false label:"good first issue",/);
-    expect(q.length).toBeLessThan(256);
+    expect(q.length).toBeLessThanOrEqual(256);
+  });
+
+  it('searches only the spellings the repo uses', () => {
+    const repo = { fullName: 'bevyengine/bevy', issueLabels: ['D-Trivial', 'help wanted'] };
+    expect(repoIssueQuery(repo, 'gfi')).toBe(
+      'repo:bevyengine/bevy is:issue is:open no:assignee archived:false label:"D-Trivial"',
+    );
+    expect(repoIssueQuery(repo, 'help')).toContain('label:"help wanted"');
+    expect(repoIssueQuery({ fullName: 'a/b', issueLabels: ['E-easy'] }, 'help')).toContain('"help-wanted"');
+  });
+
+  it('stays under 256 characters by dropping spellings', () => {
+    const repo = { fullName: `some-organisation/${'x'.repeat(60)}`, issueLabels: GOOD_FIRST_LABELS };
+    const q = repoIssueQuery(repo, 'gfi', parseQuery('rust docs tests bugs fewer than 3 comments'));
+    expect(q.length).toBeLessThanOrEqual(256);
+    expect(q).toContain('label:"good first issue"');
+    expect(q).toMatch(/comments:<3$/);
   });
 
   it('adds the issue-level parts of the directory search', () => {
-    const q = repoIssueQuery('a/b', 'all', parseQuery('beginner rust docs no comments'));
+    const q = repoIssueQuery(unknown('a/b'), 'all', parseQuery('beginner rust docs no comments'));
     expect(q).toBe('repo:a/b is:issue is:open no:assignee archived:false label:documentation comments:0');
   });
 
   it('help wanted tab', () => {
-    expect(repoIssueQuery('a/b', 'help')).toContain('label:"help wanted","help-wanted"');
+    expect(repoIssueQuery(unknown('a/b'), 'help')).toContain('label:"help wanted","help-wanted"');
+  });
+});
+
+describe('back to your search', () => {
+  it('keeps q, sort and first, and nothing else', () => {
+    expect(backToSearchPath(new URLSearchParams('q=rust docs&sort=stars&first=1&tab=help&demo=1'))).toBe(
+      '/?q=rust+docs&sort=stars&first=1',
+    );
+    expect(backToSearchPath(new URLSearchParams('q=rust&sort=score'))).toBe('/?q=rust');
+    expect(backToSearchPath(new URLSearchParams('sort=stars'))).toBe('/');
   });
 });

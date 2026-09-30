@@ -51,6 +51,12 @@ export interface RepoRecord {
   gfiUnassigned: number;
   /** Of those, how many have no comments at all. */
   gfiUnanswered: number;
+  /**
+   * The good-first and help-wanted label spellings this repo's open issues use
+   * (from shared/labels.ts, spelled as on GitHub, most used first). The repo page's
+   * live issue search asks for these. Empty when none were seen.
+   */
+  issueLabels: string[];
   /** Median hours until a maintainer first replied on recent issues, or null when unknown. */
   responseHours: number | null;
   /** When responseHours was sampled (re-sampled weekly), or null. */

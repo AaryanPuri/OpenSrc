@@ -179,6 +179,8 @@ export function expandDataset(c: CompactDataset, languageLabel: LanguageLabel = 
       gfiSampled: c.gs[i],
       gfiUnassigned: c.gu[i],
       gfiUnanswered: c.ga[i],
+      // Not in the index: the repo page gets them with the full record.
+      issueLabels: [],
       responseHours: c.rh[i],
       responseSampledAt: null,
       fields: c.fl[i] ? c.fl[i].split(',') : [],

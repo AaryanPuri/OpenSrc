@@ -260,8 +260,10 @@ export async function checkRepo(fullName: string, opts: CheckOptions = {}): Prom
   if (!labels) unknown.push("the repo's own label names");
 
   // One search at a time: GitHub's secondary limits dislike bursts.
-  const gfi = await countIssues(get, name, pickLabels(labels, GOOD_FIRST_LABELS), GFI_SAMPLE);
-  const help = await countIssues(get, name, pickLabels(labels, HELP_WANTED_LABELS), 0);
+  const gfiLabels = pickLabels(labels, GOOD_FIRST_LABELS);
+  const helpLabels = pickLabels(labels, HELP_WANTED_LABELS);
+  const gfi = await countIssues(get, name, gfiLabels, GFI_SAMPLE);
+  const help = await countIssues(get, name, helpLabels, 0);
 
   const commit = commits?.[0]?.commit;
   const lastCommitAt = commit?.committer?.date ?? commit?.author?.date ?? repo.pushed_at ?? repo.created_at;
@@ -295,9 +297,15 @@ export async function checkRepo(fullName: string, opts: CheckOptions = {}): Prom
     gfiSampled: gfi.items.length,
     gfiUnassigned: gfi.items.filter((i) => !assigned(i)).length,
     gfiUnanswered: gfi.items.filter((i) => i.comments === 0).length,
+    issueLabels: labels ? [...gfiLabels, ...helpLabels] : [],
     responseHours: null,
     responseSampledAt: null,
-    fields: classifyRepo({ name: repo.name, description: repo.description, topics }),
+    fields: classifyRepo({
+      name: repo.name,
+      description: repo.description,
+      topics,
+      language: (repo.language && resolveLanguage(repo.language)) || null,
+    }),
     curated: false,
     firstSeenAt: new Date(now).toISOString(),
   };

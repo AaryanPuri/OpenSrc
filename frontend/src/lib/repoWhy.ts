@@ -8,6 +8,7 @@ import {
   FIRST_PR_MIN_GFI,
   FIRST_PR_MIN_SCORE,
   SCORE_WEIGHTS,
+  claimableGfi,
   scoreRepo,
   GATE_LABELS,
 } from '../../../shared/score';
@@ -37,11 +38,11 @@ export function scoreLines(r: RepoRecord, now: number): ScoreLine[] {
     supply:
       r.goodFirstIssues === 0
         ? `no open good first issues${r.helpWanted ? `, ${plural(r.helpWanted, 'help-wanted issue')}` : ''}`
-        : `${plural(r.goodFirstIssues, 'open good first issue')}${r.helpWanted ? ` and ${r.helpWanted} help wanted` : ''}`,
+        : `${plural(claimableGfi(r), 'unclaimed good first issue')} of ${r.goodFirstIssues} open${r.helpWanted ? `, and ${r.helpWanted} help wanted` : ''}`,
     activity: r.lastCommitAt ? `last commit ${timeAgo(r.lastCommitAt, now)}` : 'last commit unknown',
     response:
       r.responseHours === null
-        ? 'reply time not measured yet, so it counts as average'
+        ? 'reply time not measured yet, so it counts a little under half'
         : `maintainers usually reply in ${replyTime(r.responseHours)}`,
     onboarding: [
       r.contributingUrl ? 'a CONTRIBUTING guide' : 'no CONTRIBUTING guide',
@@ -70,7 +71,7 @@ export function scoreLines(r: RepoRecord, now: number): ScoreLine[] {
 export function firstPrChecks(r: RepoRecord): { ok: boolean; text: string }[] {
   return [
     { ok: r.score >= FIRST_PR_MIN_SCORE, text: `Score of ${FIRST_PR_MIN_SCORE} or more` },
-    { ok: r.goodFirstIssues >= FIRST_PR_MIN_GFI, text: `At least ${FIRST_PR_MIN_GFI} good first issues` },
+    { ok: claimableGfi(r) >= FIRST_PR_MIN_GFI, text: `At least ${FIRST_PR_MIN_GFI} unclaimed good first issues` },
     { ok: !!r.contributingUrl, text: 'A CONTRIBUTING guide' },
     {
       ok: r.responseHours === null || r.responseHours <= FIRST_PR_MAX_RESPONSE_HOURS,

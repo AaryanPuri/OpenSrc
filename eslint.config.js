@@ -10,7 +10,17 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 export default defineConfig(
-  globalIgnores(['**/dist/', '**/dist-ssr/', '**/node_modules/', '**/coverage/', '.claude/']),
+  globalIgnores([
+    '**/dist/',
+    '**/dist-ssr/',
+    '**/node_modules/',
+    '**/coverage/',
+    '.claude/',
+    'e2e/.site/',
+    'e2e/.data/',
+    'playwright-report/',
+    'test-results/',
+  ]),
 
   js.configs.recommended,
   tseslint.configs.recommended,
@@ -77,9 +87,9 @@ export default defineConfig(
     },
   },
 
-  // Server + tooling
+  // Server + tooling (and the e2e tests, which run in Node and drive the browser)
   {
-    files: ['backend/**/*.ts', '**/*.config.{js,ts}', 'eslint.config.js'],
+    files: ['backend/**/*.ts', '**/*.config.{js,ts}', 'eslint.config.js', 'e2e/**/*.{ts,mjs}'],
     languageOptions: { globals: globals.node },
   },
 

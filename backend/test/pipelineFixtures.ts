@@ -54,8 +54,10 @@ export function detailNode(fullName: string, over: Partial<DetailNode> = {}): De
       nodes: Array.from({ length: 6 }, (_, i) => ({
         assignees: { totalCount: i < 1 ? 1 : 0 },
         comments: { totalCount: i < 2 ? 0 : 3 },
+        labels: { nodes: [{ name: i < 4 ? "good first issue" : "E-easy" }, { name: "bug" }] },
       })),
     },
+    hwSample: { nodes: [{ labels: { nodes: [{ name: "help wanted" }] } }] },
     ...over,
   };
 }

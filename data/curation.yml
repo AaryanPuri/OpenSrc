@@ -42,6 +42,12 @@ include:
   - appwrite/appwrite
   - kubernetes/kubernetes
   - godotengine/godot
+  # Beginner labels outside the standard spelling (E-easy, D-Trivial, sprintable…), so the search misses them.
+  - tokio-rs/tokio
+  - bevyengine/bevy
+  - numpy/numpy
+  - vitejs/vite
+  - withastro/astro
 
 exclude: []
 

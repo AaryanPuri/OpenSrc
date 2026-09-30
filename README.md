@@ -13,7 +13,7 @@ scored on how welcoming they are to a first pull request.
 
 [![CI](https://github.com/AaryanPuri/OpenSrc/actions/workflows/ci.yml/badge.svg)](https://github.com/AaryanPuri/OpenSrc/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-c0392b.svg)](LICENSE)
-[![Repos listed](https://img.shields.io/badge/repos%20listed-1%2C489-3e5c9a.svg)](https://opensrc.studio)
+[![Repos listed](https://img.shields.io/badge/repos%20listed-1%2C526-3e5c9a.svg)](https://opensrc.studio)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-3f7650.svg)](CONTRIBUTING.md)
 
 <br />
@@ -94,16 +94,18 @@ OpenSrc checks that for you. Every night it scans GitHub for active projects wit
 
 Every listed repo gets a **contributor-friendliness score from 0 to 100**, rebuilt nightly from GitHub data.
 
-| Part                    | Weight | What it measures                                               |
-| :---------------------- | -----: | :------------------------------------------------------------- |
-| **Issues to pick from** |     25 | Open good-first-issues (plus some help-wanted), on a log scale |
-| **Recent activity**     |     20 | How recently the default branch saw a commit                   |
-| **Maintainer replies**  |     15 | Median time for a maintainer to first reply to a new issue     |
-| **Onboarding**          |     15 | CONTRIBUTING guide, code of conduct, a clear description       |
-| **Up for grabs**        |     15 | Share of good first issues that are still unassigned           |
-| **Reach**               |     10 | Stars, damped so big names don't dominate                      |
+| Part                    | Weight | What it measures                                                                        |
+| :---------------------- | -----: | :-------------------------------------------------------------------------------------- |
+| **Issues to pick from** |     30 | Unclaimed (unassigned) good first issues, plus a little for help-wanted, on a log scale |
+| **Recent activity**     |     15 | How recently the default branch saw a commit                                            |
+| **Maintainer replies**  |     20 | Median time for a maintainer to first reply to a new issue                              |
+| **Onboarding**          |     10 | CONTRIBUTING guide, code of conduct, a clear description                                |
+| **Up for grabs**        |     15 | Share of good first issues that are still unassigned                                    |
+| **Reach**               |     10 | Stars, damped so big names don't dominate                                               |
 
-A repo is marked **🪡 First-PR friendly** when it scores **60 or more**, has **at least 3 good first issues**, has a **CONTRIBUTING guide**, and maintainers reply **within 3 days** (or there isn't enough data yet).
+A repo is marked **🪡 First-PR friendly** when it scores **70 or more**, has **at least 3 unclaimed good first issues**, has a **CONTRIBUTING guide**, and maintainers reply **within 3 days** (or there isn't enough data yet). About a quarter of listed repos qualify.
+
+Good first issues are counted across the label spellings projects really use (`good first issue`, `E-easy`, `D-Trivial`, `sprintable`, `first timers only` and more, see [`shared/labels.ts`](shared/labels.ts)).
 
 <details>
 <summary><strong>What keeps a repo out of the directory</strong></summary>
@@ -168,6 +170,7 @@ GitHub login, synced saves and the weekly newsletter are optional too (`DATABASE
 | `npm start`                             | Build, then serve the site and API from one Node server           |
 | `npm test`                              | Frontend, shared and backend tests (Vitest)                       |
 | `npm run typecheck` / `lint` / `format` | TypeScript, ESLint and Prettier                                   |
+| `npm run e2e`                           | End-to-end tests in Chromium (Playwright), after `npm run build`  |
 | `npm --prefix backend run collect`      | Run the repo collector locally (needs `GITHUB_TOKEN`)             |
 | `npm --prefix backend run db:migrate`   | Create or update the optional database's tables                   |
 | `npm --prefix backend run digest`       | Send the weekly newsletter (`-- --dry-run` to preview)            |
@@ -187,7 +190,7 @@ More detail: [`backend/README.md`](backend/README.md) (API and collector), [`doc
 | **Backend**   | Hono (Node or Cloudflare Workers), GitHub REST and GraphQL APIs, optional Claude parsing |
 | **Data**      | A nightly collector on GitHub Actions writing a versioned JSON dataset                   |
 | **Accounts**  | Optional: GitHub OAuth, libSQL (Turso), Resend for the weekly digest                     |
-| **Quality**   | Vitest, ESLint, Prettier and GitHub Actions CI                                           |
+| **Quality**   | Vitest, Playwright, ESLint, Prettier and GitHub Actions CI                               |
 | **Hosting**   | Cloudflare                                                                               |
 
 ---

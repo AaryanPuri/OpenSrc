@@ -41,3 +41,64 @@ describe('classifyRepo', () => {
     expect(classifyRepo({ name: 'zzz', description: 'Nothing to see here', topics: ['hacktoberfest'] })).toEqual([]);
   });
 });
+
+describe('classifyRepo: real repos', () => {
+  it('freeCodeCamp is web work, not scientific computing ("computer science" is denied)', () => {
+    const fields = classifyRepo({
+      name: 'freeCodeCamp',
+      language: 'typescript',
+      description:
+        "freeCodeCamp.org's open-source codebase and curriculum. Learn math, programming, and computer science for free.",
+      topics: ['learn-to-code', 'nonprofits', 'programming', 'nodejs', 'react', 'd3', 'education', 'javascript'],
+    });
+    expect(fields).not.toContain('science');
+    expect(fields).toEqual(['frontend', 'backend']);
+  });
+
+  it('uses ecosystem hints on topics and prose', () => {
+    expect(
+      classifyRepo({
+        name: 'tantivy',
+        description: 'Tantivy is a full-text search engine library inspired by Apache Lucene and written in Rust',
+        topics: ['search-engine', 'rust'],
+      }),
+    ).toEqual(['databases']);
+    expect(
+      classifyRepo({
+        name: 'FastAsyncWorldEdit',
+        description: 'Blazingly fast world manipulation for artists, builders and everyone else.',
+        topics: ['minecraft-plugin', 'minecraft-mod', 'worldedit'],
+      }),
+    ).toEqual(['gamedev']);
+    expect(
+      classifyRepo({ name: 'rocq', description: 'The Rocq Prover is an interactive theorem prover', topics: [] }),
+    ).toEqual(['compilers']);
+  });
+
+  it('vague prose words count half, so they alone assign nothing', () => {
+    // "web" and "UI" in passing are not enough for Web Frontend
+    expect(classifyRepo({ name: 'eclipse.platform.ui', description: 'Eclipse Platform UI', topics: [] })).toEqual([]);
+    expect(classifyRepo({ name: 'x', description: 'Works on any OS and the web', topics: [] })).toEqual([]);
+    // but a real synonym still does
+    expect(classifyRepo({ name: 'x', description: 'An AI-powered document editor', topics: [] })).toContain('ml');
+  });
+
+  it('uses the primary language as a hint', () => {
+    expect(
+      classifyRepo({
+        name: 'yak-aggregator',
+        description: 'On-chain dex aggregator',
+        topics: [],
+        language: 'solidity',
+      }),
+    ).toEqual(['blockchain']);
+    // JS/TS with UI words is frontend work; the same words in a Go repo are not.
+    const ui = {
+      name: 'track-extension',
+      description: 'Toggl Track browser extension for Chrome and Firefox',
+      topics: [],
+    };
+    expect(classifyRepo({ ...ui, language: 'javascript' })).toEqual(['frontend']);
+    expect(classifyRepo({ ...ui, language: 'go' })).toEqual([]);
+  });
+});

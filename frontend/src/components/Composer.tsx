@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { ArrowRight, X } from 'lucide-react';
 import { forwardRef, useEffect, useId, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { useAutoDemo } from '../hooks/useAutoDemo';
+import { useHydrated } from '../hooks/useHydrated';
 import { useIsomorphicLayoutEffect } from '../hooks/useIsomorphicLayoutEffect';
 import { rememberAiParse } from '../lib/aiParse';
 import { EXAMPLE_QUERIES, REPO_EXAMPLE_QUERIES } from '../lib/examples';
@@ -81,6 +82,7 @@ export const Composer = forwardRef<HTMLTextAreaElement, Props>(function Composer
   const copy = COPY[mode];
   const repos = mode === 'repos';
   const demo = useAutoDemo(demoQueries, autoplay && !value && !focused);
+  const hydrated = useHydrated();
   const input = useRef<HTMLTextAreaElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
   useImperativeHandle(ref, () => input.current as HTMLTextAreaElement);
@@ -253,6 +255,8 @@ export const Composer = forwardRef<HTMLTextAreaElement, Props>(function Composer
             ) : null
           }
           emptyHint={<span id={`${ids}-hint`}>{copy.hint}</span>}
+          // The server (and visitors without JS) keep the hint; in the browser the demo hides it.
+          hintHidden={hydrated && demo.typing}
         />
       </div>
 

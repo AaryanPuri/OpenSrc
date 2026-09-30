@@ -3,6 +3,7 @@ import { Bookmark, CircleCheck, MessageSquareReply, Star } from 'lucide-react';
 import { memo, useRef } from 'react';
 import { Link } from 'react-router';
 import type { RepoRecord } from '../../../shared/repo';
+import { FIRST_PR_MIN_SCORE } from '../../../shared/score';
 import { fabricStyle } from '../lib/fabric';
 import { compactNumber, plural, replyTime } from '../lib/format';
 import { committedAgo, fieldLabel, languageColor, repoFabric, repoPath } from '../lib/repoDisplay';
@@ -27,7 +28,7 @@ export function FirstPrRibbon({ className = '' }: { className?: string }) {
   return (
     <span
       className={`stitch inline-flex h-6 shrink-0 items-center gap-1 rounded-full bg-accent/[0.08] px-2 text-[12px] font-semibold text-accent ${className}`}
-      title="Plenty of good first issues, a CONTRIBUTING guide, maintainers who reply, and a score of 60+"
+      title={`Unclaimed good first issues, a CONTRIBUTING guide, maintainers who reply, and a score of ${FIRST_PR_MIN_SCORE}+`}
       data-testid="first-pr-ribbon"
     >
       <NeedleIcon className="h-3.5 w-3.5" />

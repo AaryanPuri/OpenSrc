@@ -3,6 +3,7 @@
  *
  *   npm run collect -- [--dry-run] [--limit N] [--only owner/name,…] [--languages rust,go]
  *   npm run validate-data
+ *   npm run rescore                 # re-classify and re-score data/ offline (after a score or field rule change)
  *   npx tsx src/pipeline/cli.ts summary --base old-repos.json   # Markdown for the nightly PR
  *
  * The token comes from COLLECTOR_TOKEN, else GITHUB_TOKEN. A run that hits
@@ -12,12 +13,13 @@ import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { classifyRepo } from "../../../shared/classify.js";
 import { LANGUAGES } from "../../../shared/dictionary.js";
 import type { RepoRecord } from "../../../shared/repo.js";
 import { collect } from "./collect.js";
-import { emptyCuration, parseCuration, type Curation } from "./curation.js";
+import { emptyCuration, fieldOverride, parseCuration, type Curation } from "./curation.js";
 import { GraphQLClient, RateLimitAbort } from "./graphql.js";
-import { mergeDatasets } from "./merge.js";
+import { buildMeta, mergeDatasets, withScore } from "./merge.js";
 import { summarizeChanges } from "./summary.js";
 import { validateDataset } from "./validate.js";
 import { readCurationText, readDataset, writeDataset } from "./write.js";
@@ -180,6 +182,25 @@ export async function runCollect(args: CollectArgs, deps: RunDeps): Promise<Coll
   };
 }
 
+/**
+ * Re-classifies and re-scores the committed dataset without touching GitHub,
+ * at its own generatedAt (so ages don't move). For score or field rule changes
+ * between nightly runs. Gates don't depend on the weights, so nothing is dropped.
+ */
+export async function runRescore(dataDir: string, log: (msg: string) => void = console.log): Promise<void> {
+  const { repos, meta } = await readDataset(dataDir);
+  if (!meta) throw new Error("rescore needs data/meta.json");
+  const curation = await loadCuration(dataDir);
+  const now = Date.parse(meta.generatedAt);
+  const next = repos.map((r) => {
+    const fields = fieldOverride(curation, r.fullName) ?? classifyRepo(r);
+    return withScore({ ...r, fields }, now).record;
+  });
+  const nextMeta = buildMeta(next, meta);
+  await writeDataset(dataDir, next, nextMeta);
+  log(`Rescored ${next.length} repos: ${nextMeta.firstPrFriendly} first-PR friendly (was ${meta.firstPrFriendly}).`);
+}
+
 export async function runValidate(dataDir: string): Promise<string[]> {
   const data = await readDataset(dataDir);
   let curation: Curation;
@@ -211,7 +232,11 @@ async function main(): Promise<number> {
     process.stdout.write(summarizeChanges(before, repos, meta));
     return 0;
   }
-  if (command !== "collect") throw new Error(`unknown command "${command}" (collect, validate, summary)`);
+  if (command === "rescore") {
+    await runRescore(args.dataDir);
+    return 0;
+  }
+  if (command !== "collect") throw new Error(`unknown command "${command}" (collect, validate, summary, rescore)`);
 
   const token = process.env.COLLECTOR_TOKEN || process.env.GITHUB_TOKEN;
   if (!token) {

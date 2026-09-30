@@ -131,6 +131,11 @@ interface StripProps {
   ai?: boolean;
   /** Optional trailing control (e.g. "Search this" for the demo's suggestion). */
   action?: React.ReactNode;
+  /**
+   * Keep the empty hint invisible (it stays in the DOM for aria-describedby).
+   * The typing demo sets it, so patches flying in and out never overlap the hint.
+   */
+  hintHidden?: boolean;
 }
 
 /**
@@ -146,6 +151,7 @@ export function PatchStrip({
   label = 'We read that as',
   ai = false,
   action,
+  hintHidden = false,
 }: StripProps) {
   const buttons = useRef(new Map<string, HTMLButtonElement>());
   const labelRef = useRef<HTMLHeadingElement>(null);
@@ -208,9 +214,16 @@ export function PatchStrip({
               key="hint"
               layout
               initial={{ y: 4 }}
-              animate={{ y: 0 }}
-              exit={{ opacity: 0 }}
+              // Fades in only once departing patches are gone, so the two never overlap.
+              animate={
+                hintHidden
+                  ? { y: 0, opacity: 0, transition: { duration: 0 } }
+                  : { y: 0, opacity: 1, transition: { opacity: { delay: 0.22, duration: 0.2 } } }
+              }
+              exit={{ opacity: 0, transition: { duration: hintHidden ? 0 : 0.12 } }}
+              aria-hidden={hintHidden || undefined}
               className="py-1.5 text-sm text-subtle"
+              data-testid="patch-hint"
             >
               {emptyHint}
             </motion.li>

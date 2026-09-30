@@ -4,7 +4,7 @@
  * OR-ed and case-insensitive, so each list holds distinct spellings only.
  */
 
-import { GOOD_FIRST_LABELS, HELP_WANTED_LABELS } from "../../../shared/labels.js";
+import { GOOD_FIRST_LABELS, HELP_WANTED_LABELS, isGoodFirstLabel, isHelpWantedLabel } from "../../../shared/labels.js";
 
 // The label spellings live in shared/ so the repo page's live issue search uses the same ones.
 export { GOOD_FIRST_LABELS, HELP_WANTED_LABELS };
@@ -23,6 +23,10 @@ export const STAR_BUCKETS: [number, number | null][] = [
 export const SEARCH_PAGE_SIZE = 50;
 /** Issues looked at per repo for claimable/unanswered counts. */
 export const GFI_SAMPLE = 20;
+/** Help-wanted issues looked at per repo for the label spellings it uses. */
+export const HW_SAMPLE = 10;
+/** Labels read per sampled issue. */
+const ISSUE_LABELS = 10;
 /** Recent issues looked at per repo for the maintainer response time. */
 export const RESPONSE_SAMPLE = 20;
 const RESPONSE_COMMENTS = 10;
@@ -129,7 +133,10 @@ ${CONTRIBUTING_PATHS.map((p, i) => `  contributing${i}: object(expression: ${JSO
   gfi: issues(states: OPEN, labels: ${labelList(GOOD_FIRST_LABELS)}) { totalCount }
   hw: issues(states: OPEN, labels: ${labelList(HELP_WANTED_LABELS)}) { totalCount }
   gfiSample: issues(states: OPEN, labels: ${labelList(GOOD_FIRST_LABELS)}, first: ${GFI_SAMPLE}, orderBy: { field: CREATED_AT, direction: DESC }) {
-    nodes { assignees { totalCount } comments { totalCount } }
+    nodes { assignees { totalCount } comments { totalCount } labels(first: ${ISSUE_LABELS}) { nodes { name } } }
+  }
+  hwSample: issues(states: OPEN, labels: ${labelList(HELP_WANTED_LABELS)}, first: ${HW_SAMPLE}, orderBy: { field: CREATED_AT, direction: DESC }) {
+    nodes { labels(first: ${ISSUE_LABELS}) { nodes { name } } }
   }
 }`;
 
@@ -183,6 +190,8 @@ export function buildDetailQuery(repos: DetailRequest[], now: Date): string {
   return `query {\n  ${RATE_LIMIT}\n${body}\n}\n${DETAIL_FRAGMENT}`;
 }
 
+type IssueLabels = { nodes: ({ name: string } | null)[] } | null;
+
 export type DetailData = Record<string, DetailNode | { nodes: (ResponseIssue | null)[] } | null>;
 
 interface Actor {
@@ -218,7 +227,11 @@ export interface DetailNode {
   codeOfConduct: { key: string } | null;
   gfi: { totalCount: number };
   hw: { totalCount: number };
-  gfiSample: { nodes: ({ assignees: { totalCount: number }; comments: { totalCount: number } } | null)[] };
+  gfiSample: {
+    nodes: ({ assignees: { totalCount: number }; comments: { totalCount: number }; labels?: IssueLabels } | null)[];
+  };
+  /** Absent in older recorded fixtures. */
+  hwSample?: { nodes: ({ labels?: IssueLabels } | null)[] };
   [contributing: `contributing${number}`]: { id: string } | null;
 }
 
@@ -286,4 +299,25 @@ export function gfiSampleCounts(node: DetailNode): { sampled: number; unassigned
     unassigned: nodes.filter((n) => n.assignees.totalCount === 0).length,
     unanswered: nodes.filter((n) => n.comments.totalCount === 0).length,
   };
+}
+
+/**
+ * The good-first and help-wanted label spellings the repo's sampled open issues
+ * carry, as GitHub spells them, most used first. The repo page searches only these.
+ */
+export function issueLabelsUsed(node: DetailNode): string[] {
+  const counts = new Map<string, { name: string; n: number }>();
+  const issues = [...(node.gfiSample?.nodes ?? []), ...(node.hwSample?.nodes ?? [])];
+  for (const issue of issues) {
+    for (const l of issue?.labels?.nodes ?? []) {
+      if (!l?.name || !(isGoodFirstLabel(l.name) || isHelpWantedLabel(l.name))) continue;
+      const k = l.name.toLowerCase();
+      const c = counts.get(k) ?? { name: l.name, n: 0 };
+      c.n++;
+      counts.set(k, c);
+    }
+  }
+  return [...counts.values()]
+    .sort((a, b) => b.n - a.n || (a.name.toLowerCase() < b.name.toLowerCase() ? -1 : 1))
+    .map((c) => c.name);
 }

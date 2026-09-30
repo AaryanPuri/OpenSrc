@@ -6,10 +6,10 @@
 import type { RepoRecord, ScoreParts } from './repo.js';
 
 export const SCORE_WEIGHTS: ScoreParts = {
-  supply: 25,
-  activity: 20,
-  response: 15,
-  onboarding: 15,
+  supply: 30,
+  activity: 15,
+  response: 20,
+  onboarding: 10,
   claimable: 15,
   reach: 10,
 };
@@ -17,10 +17,15 @@ export const SCORE_WEIGHTS: ScoreParts = {
 export const MIN_STARS = 30;
 export const MAX_IDLE_DAYS = 180;
 export const MIN_OPEN_ISSUES = 2;
-export const FIRST_PR_MIN_SCORE = 60;
+export const FIRST_PR_MIN_SCORE = 70;
 /** Most good-first-issues' worth that help-wanted issues can add to supply. */
 export const HELP_WANTED_CAP = 3;
+/** Supply earns full marks at this many claimable good-first-issues. */
+export const SUPPLY_FULL_AT = 50;
+/** Unclaimed (unassigned) good first issues needed to be first-PR friendly. */
 export const FIRST_PR_MIN_GFI = 3;
+/** Response points when there's too little data to measure (a bit under half: unproven). */
+export const UNKNOWN_RESPONSE = 0.4;
 export const FIRST_PR_MAX_RESPONSE_HOURS = 72;
 
 export type Gate = 'archived' | 'fork' | 'mirror' | 'license' | 'stale' | 'issues' | 'stars';
@@ -76,6 +81,16 @@ export function daysSince(iso: string, now: number): number {
   return Number.isFinite(t) ? Math.max(0, (now - t) / DAY_MS) : Infinity;
 }
 
+/**
+ * Open good-first-issues nobody has claimed yet: the count, scaled by the
+ * unassigned share of the sampled newest ones.
+ */
+export function claimableGfi(r: Pick<ScoreInput, 'goodFirstIssues' | 'gfiSampled' | 'gfiUnassigned'>): number {
+  return r.gfiSampled > 0
+    ? Math.round((r.goodFirstIssues * Math.min(r.gfiUnassigned, r.gfiSampled)) / r.gfiSampled)
+    : 0;
+}
+
 export function scoreGates(r: ScoreInput, now: number): Gate[] {
   const failed: Gate[] = [];
   if (r.archived) failed.push('archived');
@@ -90,16 +105,17 @@ export function scoreGates(r: ScoreInput, now: number): Gate[] {
 
 /** Each part as a 0–1 fraction of its weight. */
 export function scoreFractions(r: ScoreInput, now: number): ScoreParts {
-  // Supply: log scale, full marks at 30 open good-first-issues. Help-wanted issues count a
-  // quarter each, worth at most 3 good-first-issues, so they can't carry a repo on their own.
+  // Supply: claimable (unassigned) good-first-issues on a log scale, full marks at 50, so a
+  // big backlog that is mostly claimed doesn't count. Help-wanted issues count a quarter each,
+  // worth at most 3 good-first-issues, so they can't carry a repo on their own.
   const supply = clamp01(
-    Math.log1p(r.goodFirstIssues + Math.min(0.25 * r.helpWanted, HELP_WANTED_CAP)) / Math.log1p(30),
+    Math.log1p(claimableGfi(r) + Math.min(0.25 * r.helpWanted, HELP_WANTED_CAP)) / Math.log1p(SUPPLY_FULL_AT),
   );
   // Activity: decays with a 45-day time constant since the last commit.
   const activity = clamp01(Math.exp(-daysSince(r.lastCommitAt, now) / 45));
-  // Response: full marks within a day, zero at 30 days (log scale); unknown is neutral.
+  // Response: full marks within a day, zero at 30 days (log scale); unknown is a little under half.
   const h = r.responseHours;
-  const response = h === null ? 0.5 : h <= 24 ? 1 : clamp01(1 - Math.log(h / 24) / Math.log(30));
+  const response = h === null ? UNKNOWN_RESPONSE : h <= 24 ? 1 : clamp01(1 - Math.log(h / 24) / Math.log(30));
   // Onboarding: CONTRIBUTING matters most, then a code of conduct and a real description.
   const onboarding =
     (r.contributingUrl ? 0.6 : 0) +
@@ -125,7 +141,7 @@ export function scoreRepo(r: ScoreInput, now: number): ScoreResult {
   const firstPrFriendly =
     eligible &&
     score >= FIRST_PR_MIN_SCORE &&
-    r.goodFirstIssues >= FIRST_PR_MIN_GFI &&
+    claimableGfi(r) >= FIRST_PR_MIN_GFI &&
     !!r.contributingUrl &&
     (r.responseHours === null || r.responseHours <= FIRST_PR_MAX_RESPONSE_HOURS);
   return { eligible, failedGates, score, parts, firstPrFriendly };

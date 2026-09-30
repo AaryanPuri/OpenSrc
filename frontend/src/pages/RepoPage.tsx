@@ -26,6 +26,7 @@ import { useDocumentMeta } from '../hooks/useDocumentMeta';
 import { useHydrated } from '../hooks/useHydrated';
 import { useShell } from '../hooks/useShell';
 import { repoDetailPath } from '../lib/dataset';
+import { backToSearchPath } from '../lib/repoSearch';
 import { fabricStyle } from '../lib/fabric';
 import { hasLanguagePage } from '../lib/listPages';
 import { committedAgo, fieldLabel, languageColor, repoFabric, scoreLevel } from '../lib/repoDisplay';
@@ -122,7 +123,7 @@ function RepoView({ repo, now, languagePage }: { repo: RepoRecord; now: number; 
   return (
     <div className="mx-auto max-w-6xl px-4 pb-24 pt-5 sm:px-6 sm:pt-8">
       <Link
-        to={q ? `/?q=${encodeURIComponent(q)}` : '/'}
+        to={backToSearchPath(params)}
         className="-ml-1 inline-flex min-h-11 items-center gap-1.5 rounded-lg px-1 text-sm text-muted hover:text-fg"
       >
         <ArrowLeft className="h-4 w-4" aria-hidden="true" />
@@ -317,6 +318,7 @@ function Facts({ repo, now, languagePage }: { repo: RepoRecord; now: number; lan
         >
           {dot}
           {repo.languageName}
+          <span className="sr-only"> repos</span>
         </Link>
       ) : repo.languageName ? (
         <span className="inline-flex items-center gap-1.5">

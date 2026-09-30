@@ -15,6 +15,8 @@ interface State {
   notice?: SearchNotice;
   relaxed?: boolean;
   error?: string;
+  /** The query the current results (or error) belong to; null while none has settled. */
+  query: string | null;
 }
 
 const INITIAL: State = {
@@ -25,6 +27,7 @@ const INITIAL: State = {
   hasMore: false,
   loadingMore: false,
   source: null,
+  query: null,
 };
 
 /**
@@ -68,13 +71,14 @@ export function useSearch(ghQuery: string | null, sort: SortKey, token: string |
           source: r.source,
           notice: r.notice,
           relaxed: r.relaxed,
+          query: ghQuery,
         });
       })
       .catch((e: unknown) => {
         if (c.signal.aborted || gen !== generation.current) return;
         const message =
           e instanceof SearchError ? e.message : 'Something went wrong while searching. Please try again.';
-        setState({ ...INITIAL, status: 'error', error: message });
+        setState({ ...INITIAL, status: 'error', error: message, query: ghQuery });
       });
     return () => c.abort();
   }, [ghQuery, sort, token, demo, nonce]);

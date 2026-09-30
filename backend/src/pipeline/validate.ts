@@ -4,6 +4,7 @@
  * and meta totals. Returns a list of problems; empty means valid.
  */
 import { DOMAINS, LANGUAGES } from "../../../shared/dictionary.js";
+import { isGoodFirstLabel, isHelpWantedLabel } from "../../../shared/labels.js";
 import { MAX_REPOS, type DatasetMeta, type RepoRecord } from "../../../shared/repo.js";
 import { scoreRepo } from "../../../shared/score.js";
 import { isExcluded, isIncluded, type Curation } from "./curation.js";
@@ -41,6 +42,7 @@ const TYPES: Record<keyof RepoRecord, Kind> = {
   gfiSampled: "number",
   gfiUnassigned: "number",
   gfiUnanswered: "number",
+  issueLabels: "string[]",
   responseHours: "number?",
   responseSampledAt: "string?",
   fields: "string[]",
@@ -96,6 +98,8 @@ function validateRecord(r: RepoRecord, now: number, errors: string[]): void {
   if (new Set(r.fields).size !== r.fields.length) err("duplicate fields");
   if (r.gfiUnassigned > r.gfiSampled || r.gfiUnanswered > r.gfiSampled) err("sample counts exceed gfiSampled");
   if (r.gfiSampled > r.goodFirstIssues) err("gfiSampled exceeds goodFirstIssues");
+  const unknownLabels = r.issueLabels.filter((l) => !isGoodFirstLabel(l) && !isHelpWantedLabel(l));
+  if (unknownLabels.length) err(`issueLabels has unknown label(s) ${unknownLabels.join(", ")}`);
   if (!Number.isInteger(r.score) || r.score > 100) err(`score ${r.score} is not an integer 0–100`);
 
   const partKeys = Object.keys(r.scoreParts);

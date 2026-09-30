@@ -37,6 +37,7 @@ export const RECORD_KEYS: (keyof RepoRecord)[] = [
   "gfiSampled",
   "gfiUnassigned",
   "gfiUnanswered",
+  "issueLabels",
   "responseHours",
   "responseSampledAt",
   "fields",

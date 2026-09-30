@@ -76,7 +76,7 @@ describe('server rendering', () => {
     expect(html.match(/data-testid="repo-card"/g)).toHaveLength(rust.length);
     expect(html).toContain('href="/issues?q=beginner%20rust%20repos"');
     // Cards carry the search to the repo page.
-    expect(html).toContain(`href="/repo/${star.fullName}?q=beginner%20rust%20repos"`);
+    expect(html).toContain(`href="/repo/${star.fullName}?q=beginner+rust+repos"`);
   });
 
   it('shows skeletons on / while the directory loads', () => {

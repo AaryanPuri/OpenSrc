@@ -38,6 +38,8 @@ describe('compact repo index', () => {
         homepage: null,
         avatarUrl: `https://github.com/${r.owner}.png?size=96`,
         topics: [],
+        // Only in the full record (/data/repo/…), for the repo page.
+        issueLabels: [],
         createdAt: '',
         responseSampledAt: null,
         responseHours: r.responseHours === null ? null : roundHours(r.responseHours),

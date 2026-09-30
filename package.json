@@ -10,14 +10,18 @@
     "dev:backend": "npm --prefix backend run dev",
     "build": "npm --prefix frontend run build && npm --prefix backend run build",
     "test": "npm --prefix frontend test && npm --prefix backend test",
-    "typecheck": "npm --prefix frontend run typecheck && npm --prefix backend run typecheck",
+    "typecheck": "npm --prefix frontend run typecheck && npm --prefix backend run typecheck && tsc -p e2e",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "start": "npm run build && npm --prefix backend run start:prod"
+    "start": "npm run build && npm --prefix backend run start:prod",
+    "e2e": "node e2e/build-site.mjs && playwright test",
+    "e2e:install": "playwright install chromium"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^20.19.43",
     "concurrently": "^9.2.4",
     "eslint": "^10.11.0",
     "eslint-config-prettier": "^10.1.8",

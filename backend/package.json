@@ -13,6 +13,7 @@
     "test": "vitest run",
     "collect": "tsx src/pipeline/cli.ts collect",
     "validate-data": "tsx src/pipeline/cli.ts validate",
+    "rescore": "tsx src/pipeline/cli.ts rescore",
     "db:migrate": "tsx src/db/migrate.ts",
     "digest": "tsx src/newsletter/cli.ts"
   },

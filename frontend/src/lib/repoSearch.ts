@@ -6,11 +6,12 @@
  */
 import { useMemo } from 'react';
 import { FAST_RESPONSE_HOURS } from '../../../shared/collections';
-import { GOOD_FIRST_LABELS, HELP_WANTED_LABELS } from '../../../shared/labels';
+import { GOOD_FIRST_LABELS, HELP_WANTED_LABELS, isGoodFirstLabel, isHelpWantedLabel } from '../../../shared/labels';
 import type { RepoRecord } from '../../../shared/repo';
 import {
   applyRepoFilter,
   parsedToRepoFilter,
+  REPO_SORTS,
   sortRepos,
   type IssueLevel,
   type RepoFilter,
@@ -188,6 +189,21 @@ export function removeRepoChip(parsed: ParsedQuery, chip: Pick<Chip, 'kind' | 'i
   return removeChip(parsed, chip);
 }
 
+/** `q=…&sort=…&first=1` for a directory search (the default sort is left out). */
+export function repoSearchParams(q: string, sort: string | null, first: boolean): string {
+  const params = new URLSearchParams({ q });
+  if (sort && sort !== REPO_SORTS[0]) params.set('sort', sort);
+  if (first) params.set('first', '1');
+  return params.toString();
+}
+
+/** The directory search a repo page was opened from: its `q`, `sort` and `first`, nothing else. */
+export function backToSearchPath(params: URLSearchParams): string {
+  const q = params.get('q')?.trim() ?? '';
+  if (!q) return '/';
+  return `/?${repoSearchParams(q, params.get('sort'), params.get('first') === '1')}`;
+}
+
 /* ------------------------------------------------------------------ */
 /* A repo page's live issues                                           */
 /* ------------------------------------------------------------------ */
@@ -195,7 +211,10 @@ export function removeRepoChip(parsed: ParsedQuery, chip: Pick<Chip, 'kind' | 'i
 export type IssueTab = 'gfi' | 'help' | 'all';
 export const ISSUE_TABS: IssueTab[] = ['gfi', 'help', 'all'];
 
-/** Label spellings searched per tab: the most common ones, so the query stays well under GitHub's 256 characters. */
+/**
+ * Label spellings searched per tab when a repo's own spellings aren't known (the
+ * index doesn't carry them): the most common ones.
+ */
 const TAB_LABELS: Record<Exclude<IssueTab, 'all'>, string[]> = {
   gfi: GOOD_FIRST_LABELS.filter((l) =>
     [
@@ -214,16 +233,30 @@ const TAB_LABELS: Record<Exclude<IssueTab, 'all'>, string[]> = {
   ),
 };
 
-const labelQualifier = (labels: string[]) => `label:${labels.map((l) => `"${l}"`).join(',')}`;
+/** GitHub rejects longer search queries. */
+export const MAX_ISSUE_QUERY = 256;
+
+const labelQualifier = (labels: string[]) => `label:${labels.map((l) => `"${l.replace(/"/g, '')}"`).join(',')}`;
+
+/** The spellings to search on a tab: the ones the repo's issues use, else the common ones. */
+export function tabLabels(repo: Pick<RepoRecord, 'issueLabels'>, tab: Exclude<IssueTab, 'all'>): string[] {
+  const own = (repo.issueLabels ?? []).filter(tab === 'gfi' ? isGoodFirstLabel : isHelpWantedLabel);
+  return own.length ? own : TAB_LABELS[tab];
+}
 
 /**
  * `repo:o/n is:issue is:open no:assignee label:"good first issue",…` plus the
  * issue-level parts of the directory search (kind of work, comment ceiling,
  * label qualifiers), so "rust docs" on the home page shows docs issues here.
+ * Label spellings are dropped from the end until it fits in 256 characters.
  */
-export function repoIssueQuery(fullName: string, tab: IssueTab, parsed: ParsedQuery | null = null): string {
-  const parts = [`repo:${fullName}`, ...BASE_QUALIFIERS];
-  if (tab !== 'all') parts.push(labelQualifier(TAB_LABELS[tab]));
+export function repoIssueQuery(
+  repo: Pick<RepoRecord, 'fullName' | 'issueLabels'>,
+  tab: IssueTab,
+  parsed: ParsedQuery | null = null,
+): string {
+  const head = [`repo:${repo.fullName}`, ...BASE_QUALIFIERS].join(' ');
+  let rest = '';
   if (parsed) {
     const { issueLevel } = readRepoQuery(parsed);
     const extra: ParsedQuery = {
@@ -235,10 +268,15 @@ export function repoIssueQuery(fullName: string, tab: IssueTab, parsed: ParsedQu
     // With no difficulty, language or field, the built query is the base qualifiers plus the extras.
     const built = buildGitHubQuery(extra);
     const prefix = BASE_QUALIFIERS.join(' ');
-    const rest = (built.startsWith(prefix) ? built.slice(prefix.length) : built).trim();
-    if (rest) parts.push(rest);
+    rest = (built.startsWith(prefix) ? built.slice(prefix.length) : built).trim();
   }
-  return parts.join(' ');
+  const join = (labels: string[]) =>
+    [head, labels.length ? labelQualifier(labels) : '', rest].filter(Boolean).join(' ');
+  if (tab === 'all') return join([]);
+  const labels = tabLabels(repo, tab);
+  let n = labels.length;
+  while (n > 1 && join(labels.slice(0, n)).length > MAX_ISSUE_QUERY) n--;
+  return join(labels.slice(0, n));
 }
 
 /** The issue-level patches of a directory search, for "narrowed by your search" on a repo page. */
